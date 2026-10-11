@@ -34,6 +34,13 @@ const SHOW_CLOUDS_AND_WAVE = false;
 /** @constant @type {number} color of the placeholder background used until the background texture is ready */
 const PLACEHOLDER_BG_COLOR = 0x8a8f99;
 
+/** @constant @type {number[]} x coordinates of the character slots on the character select view */
+const SELECT_SLOT_X = [108, 216, 324];
+/** @constant @type {number} y coordinate of the characters on the character select view */
+const SELECT_SLOT_Y = 160;
+/** @constant @type {number[]} cursor colors of player 1 and player 2 */
+const SELECT_PLAYER_COLORS = [0xff6b6b, 0x6bb8ff];
+
 /**
  * Class representing intro view where the man with a briefcase mark appears
  */
@@ -334,6 +341,163 @@ export class MenuView {
   selectWithWho(i) {
     this.selectedWithWho = i;
     this.selectedWithWhoMessageSizeIncrement = 2;
+  }
+}
+
+/**
+ * Class representing the character select view where each player picks
+ * one of the ANA characters
+ */
+export class CharacterSelectView {
+  /**
+   * Create a CharacterSelectView object
+   * @param {Object.<string,LoaderResource>} resources loader.resources
+   */
+  constructor(resources) {
+    const textures = resources[ASSETS_PATH.SPRITE_SHEET].textures;
+    this.container = new Container();
+
+    // the room, dimmed
+    const bg = new Sprite(
+      textures[TEXTURES.BACKGROUND]
+        ? textures[TEXTURES.BACKGROUND]
+        : Texture.WHITE
+    );
+    if (!textures[TEXTURES.BACKGROUND]) {
+      bg.tint = PLACEHOLDER_BG_COLOR;
+    }
+    bg.width = 432;
+    bg.height = 304;
+    this.container.addChild(bg);
+    const dim = new Sprite(Texture.WHITE);
+    dim.tint = 0x000000;
+    dim.alpha = 0.55;
+    dim.width = 432;
+    dim.height = 304;
+    this.container.addChild(dim);
+
+    // a pedestal and an animated character in each slot
+    this.slots = [];
+    for (let i = 0; i < CHARACTER_IDS.length; i++) {
+      const x = SELECT_SLOT_X[i];
+      const pedestal = new Sprite(Texture.WHITE);
+      pedestal.tint = 0x3a3d42;
+      pedestal.width = 96;
+      pedestal.height = 10;
+      pedestal.x = x - 48;
+      pedestal.y = SELECT_SLOT_Y + 62;
+      this.container.addChild(pedestal);
+
+      const character = new AnimatedSprite(
+        makePlayerTextureArray(textures, CHARACTER_IDS[i]),
+        false
+      );
+      character.anchor.x = 0.5;
+      character.anchor.y = 0.5;
+      character.scale.x = 2;
+      character.scale.y = 2;
+      character.x = x;
+      character.y = SELECT_SLOT_Y;
+      this.container.addChild(character);
+      this.slots.push(character);
+    }
+
+    // a colored frame and a number ("1" or "2") marking each player's pick
+    this.cursors = [];
+    for (let p = 0; p < 2; p++) {
+      const cursor = new Container();
+      const inset = p === 0 ? 0 : 4; // player 2's frame sits inside
+      const w = 112 - 2 * inset;
+      const h = 150 - 2 * inset;
+      const t = 3;
+      for (const [x, y, rw, rh] of [
+        [0, 0, w, t],
+        [0, h - t, w, t],
+        [0, 0, t, h],
+        [w - t, 0, t, h],
+      ]) {
+        const bar = new Sprite(Texture.WHITE);
+        bar.tint = SELECT_PLAYER_COLORS[p];
+        bar.x = x + inset;
+        bar.y = y + inset;
+        bar.width = rw;
+        bar.height = rh;
+        cursor.addChild(bar);
+      }
+      const number = makeSpriteWithAnchorXY(
+        textures,
+        TEXTURES.NUMBER(p + 1),
+        0.5,
+        0
+      );
+      number.x = p === 0 ? 24 : w - 24 + 2 * inset;
+      number.y = -36;
+      cursor.addChild(number);
+      this.container.addChild(cursor);
+      this.cursors.push(cursor);
+    }
+
+    this.selected = [0, 1];
+    this.confirmed = [false, false];
+    this.animationFrames = [0, 0, 0];
+    this.visible = false;
+  }
+
+  /** @return {boolean} Is visible? */
+  get visible() {
+    return this.container.visible;
+  }
+
+  /** @param {boolean} bool Is visible? */
+  set visible(bool) {
+    this.container.visible = bool;
+  }
+
+  /**
+   * Show the current picks
+   * @param {number[]} selected character index for player 1 and player 2
+   * @param {boolean[]} confirmed whether each player has confirmed
+   * @param {boolean[]} shown whether each player's cursor is shown
+   */
+  setSelection(selected, confirmed, shown) {
+    this.selected = selected.slice();
+    // a hidden pick (the computer's, before the human picks) stays hidden
+    this.confirmed = confirmed.map((c, p) => c && shown[p]);
+    for (let p = 0; p < 2; p++) {
+      const cursor = this.cursors[p];
+      cursor.visible = shown[p];
+      cursor.x = SELECT_SLOT_X[selected[p]] - 56;
+      cursor.y = SELECT_SLOT_Y - 82;
+      cursor.alpha = confirmed[p] ? 1 : 0.75;
+    }
+  }
+
+  /**
+   * Animate the characters: standing for the others, a little win
+   * animation for a confirmed pick
+   * @param {number} frameCounter
+   */
+  drawCharacters(frameCounter) {
+    for (let i = 0; i < this.slots.length; i++) {
+      const picked =
+        (this.confirmed[0] && this.selected[0] === i) ||
+        (this.confirmed[1] && this.selected[1] === i);
+      let frame;
+      if (picked) {
+        // state 5 (win): 0 -> 4 then hold
+        this.animationFrames[i] = Math.min(this.animationFrames[i] + 1, 24);
+        frame = getFrameNumberForPlayerAnimatedSprite(
+          5,
+          Math.floor(this.animationFrames[i] / 5)
+        );
+      } else {
+        // state 0 (standing): 0 -> 4 -> 0 back and forth
+        this.animationFrames[i] = 0;
+        const k = Math.floor(frameCounter / 4) % 8;
+        frame = getFrameNumberForPlayerAnimatedSprite(0, k < 5 ? k : 8 - k);
+      }
+      this.slots[i].gotoAndStop(frame);
+    }
   }
 }
 
