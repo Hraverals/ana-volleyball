@@ -12,80 +12,56 @@ from characters import Pose
 
 FRAME_COUNTS = [5, 5, 5, 2, 1, 5, 5]
 
-AIR = dict(grounded=False, back_foot=(-1, 2), front_foot=(1, 1))
+# feet hang a little lower in the air
+AIR = dict(back_foot=(-1, 1), front_foot=(1, 1))
 
 POSES = {
     # standing: gentle bob, arm swing, feet shuffle
     (0, 0): Pose(),
-    (0, 1): Pose(dy=1, torso_sy=0.97, arm=60, back_foot=(-1, 0),
-                 front_foot=(1, 0), tail=(0, 1)),
-    (0, 2): Pose(dy=2, torso_sx=1.03, torso_sy=0.94, arm=72, tail=(0, 1),
-                 ear_tilt=-4),
-    (0, 3): Pose(dy=1, torso_sy=0.97, arm=60, back_foot=(1, 0),
-                 front_foot=(-1, 0), tail=(0, 1)),
-    (0, 4): Pose(arm=42, ear_tilt=3),
+    (0, 1): Pose(squash=1, arm=52, back_foot=(-1, 0), front_foot=(1, 0)),
+    (0, 2): Pose(squash=2, arm=60),
+    (0, 3): Pose(squash=1, arm=52, back_foot=(1, 0), front_foot=(-1, 0)),
+    (0, 4): Pose(arm=38),
 
-    # jump: arm flaps, feet dangle, ear streams back
-    (1, 0): Pose(dy=1, torso_sy=1.04, arm=-30, ear_tilt=-12, tail=(1, -2),
+    # jump: arm flaps, feet dangle
+    (1, 0): Pose(squash=-1, arm=-20, **AIR),
+    (1, 1): Pose(arm=10, **AIR),
+    (1, 2): Pose(squash=1, arm=40, **AIR),
+    (1, 3): Pose(arm=10, **AIR),
+    (1, 4): Pose(squash=-2, arm=-40, **AIR),
+
+    # power hit: lean back with the arm cocked, then smash forward and
+    # down; the jelly arm stretches
+    (2, 0): Pose(lean=-2, arm=-30, arm_len=12, mouth='open', **AIR),
+    (2, 1): Pose(lean=-3, squash=-1, arm=-45, arm_len=13, mouth='open',
                  **AIR),
-    (1, 1): Pose(dy=1, arm=5, ear_tilt=-8, tail=(0, -1), **AIR),
-    (1, 2): Pose(dy=1, torso_sy=0.97, arm=35, ear_tilt=-4, **AIR),
-    (1, 3): Pose(dy=1, arm=5, ear_tilt=-8, tail=(0, -1), **AIR),
-    (1, 4): Pose(torso_sy=1.05, arm=-55, ear_tilt=-15, head_dy=-1,
-                 tail=(1, -3), **AIR),
-
-    # power hit: lean back with the arm cocked up front, then smash
-    # forward and down; the jelly arm stretches
-    (2, 0): Pose(dy=1, torso_tilt=-8, arm=-35, arm_len=9, mouth='open',
-                 ear_tilt=-10, **AIR),
-    (2, 1): Pose(dy=1, torso_tilt=-14, head_dx=-1, arm=-40, arm_len=10,
-                 mouth='open', ear_tilt=-18, tail=(1, 1), **AIR),
-    (2, 2): Pose(dy=1, torso_tilt=-2, arm=-15, arm_len=11, eyes='wince',
-                 mouth='open', ear_tilt=-12, **AIR),
-    (2, 3): Pose(dy=1, torso_tilt=12, head_dx=2, arm=20, arm_len=11,
-                 eyes='wince', mouth='open', ear_tilt=-20, tail=(-1, -2),
+    (2, 2): Pose(arm=-5, arm_len=16, eyes='wince', mouth='open', **AIR),
+    (2, 3): Pose(lean=3, arm=25, arm_len=16, eyes='wince', mouth='open',
                  **AIR),
-    (2, 4): Pose(dy=1, torso_tilt=6, head_dx=1, arm=50, arm_len=8,
-                 ear_tilt=-8, **AIR),
+    (2, 4): Pose(lean=1, arm=50, arm_len=12, **AIR),
 
-    # diving forward: body stretched flat, arms reaching ahead, tail and
-    # feet trailing behind
-    (3, 0): Pose(dy=6, torso_tilt=84, torso_sy=1.4, head_dx=7, head_dy=6,
-                 arm=-10, arm_len=10, ear_tilt=-30, eyes='wince',
-                 mouth='open', tail=(-15, 17), tail_scale=0.8,
-                 grounded=False),
-    (3, 1): Pose(dy=7, torso_tilt=88, torso_sy=1.45, head_dx=8, head_dy=6,
-                 arm=-3, arm_len=11, ear_tilt=-35, eyes='wince',
-                 mouth='open', tail=(-15, 15), tail_scale=0.8,
-                 grounded=False),
-
-    # lying on the floor after the dive
-    (4, 0): Pose(dy=11, torso_tilt=90, torso_sx=0.8, torso_sy=1.45,
-                 head_dx=8, head_dy=11, arm=6, arm_len=10, ear_tilt=-45,
-                 eyes='closed', mouth='flat', tail=(-15, 19),
-                 tail_scale=0.8, grounded=False),
+    # diving forward and lying on the floor after it
+    (3, 0): Pose(dive=1, arm=-2, arm_len=12, eyes='wince', mouth='open'),
+    (3, 1): Pose(dive=1, dx=1, dy=-1, arm=-8, arm_len=14, eyes='wince',
+                 mouth='open'),
+    (4, 0): Pose(dive=2, arm=8, arm_len=11, eyes='closed', mouth='flat'),
 
     # win: hop and wave the arm out front, eyes closed in a smile
     (5, 0): Pose(arm=20, eyes='closed', mouth='open'),
-    (5, 1): Pose(dy=-2, torso_sy=1.03, arm=-10, arm_len=9, eyes='closed',
-                 mouth='open', ear_tilt=-6, **AIR),
-    (5, 2): Pose(dy=-4, torso_sy=1.05, arm=-18, arm_len=10, eyes='closed',
-                 mouth='open', ear_tilt=-10, tail=(0, -2), **AIR),
-    (5, 3): Pose(dy=-2, torso_sy=1.02, arm=-10, arm_len=9, eyes='closed',
-                 mouth='open', ear_tilt=-6, **AIR),
-    (5, 4): Pose(arm=-15, arm_len=10, head_dy=-1, eyes='closed',
-                 mouth='open', ear_tilt=4),
+    (5, 1): Pose(dy=-2, arm=-10, arm_len=12, eyes='closed', mouth='open',
+                 **AIR),
+    (5, 2): Pose(dy=-4, squash=-1, arm=-20, arm_len=13, eyes='closed',
+                 mouth='open', **AIR),
+    (5, 3): Pose(dy=-2, arm=-10, arm_len=12, eyes='closed', mouth='open',
+                 **AIR),
+    (5, 4): Pose(arm=-20, arm_len=13, eyes='closed', mouth='open'),
 
     # lose: startled, then slumps down dizzy
     (6, 0): Pose(arm=70, eyes='surprised', mouth='o', sweat=True),
-    (6, 1): Pose(dy=1, arm=80, head_dy=1, eyes='surprised', mouth='o',
-                 sweat=True, ear_tilt=-15),
-    (6, 2): Pose(dy=2, torso_sy=0.9, head_dy=4, arm=90, eyes='dizzy',
-                 mouth='frown', ear_tilt=-22, tail=(0, 2)),
-    (6, 3): Pose(dy=3, torso_sy=0.86, head_dy=6, arm=95, eyes='dizzy',
-                 mouth='frown', ear_tilt=-28, tail=(0, 3)),
-    (6, 4): Pose(dy=3, torso_sy=0.84, head_dy=7, arm=95, eyes='dizzy',
-                 mouth='frown', ear_tilt=-32, tail=(0, 3)),
+    (6, 1): Pose(neck=1, arm=80, eyes='surprised', mouth='o', sweat=True),
+    (6, 2): Pose(neck=3, squash=2, arm=85, eyes='dizzy', mouth='frown'),
+    (6, 3): Pose(neck=4, squash=3, arm=90, eyes='dizzy', mouth='frown'),
+    (6, 4): Pose(neck=5, squash=3, arm=90, eyes='dizzy', mouth='frown'),
 }
 
 assert sorted(POSES) == [(s, f) for s, n in enumerate(FRAME_COUNTS)
