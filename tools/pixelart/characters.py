@@ -42,7 +42,7 @@ PALETTES = {
     },
     'a_red': {
         'O': '#7f2328', 's': '#d8504c', 'b': '#f4776e', 'l': '#ffc8c0',
-        'e': '#f9b3c0',
+        'e': '#f9b3c0', 'P': '#ffc4ce',
         'eyes': 'open', 'mouth': 'smile',
     },
 }
@@ -362,6 +362,7 @@ def build_grid(character_id, pose):
 
 
 def build_frame(character_id, pose):
+    # a palette may override a common color (e.g. a lighter blush)
     colors = {k: hex_rgb(v) for k, v in {**COMMON,
                                          **PALETTES[character_id]}.items()
               if len(k) == 1}
