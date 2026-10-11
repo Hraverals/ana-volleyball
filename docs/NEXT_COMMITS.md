@@ -10,6 +10,12 @@ Out of scope for the current ANA remake work. Recorded here instead of being don
 - Replace sound effects (`WAVE140`–`WAVE144`, Pikachu voices)
 - Update the icons (`IDI_PIKAICON-*`), HTML titles and the web manifest
 
+## Character select
+
+- The player markers reuse the red score digits "1" and "2". Dedicated "1P" / "2P" label textures (and a "select your character" title) would read better.
+- The dimmed room behind the select screen could get a slow idle animation or a spotlight on the slot under each cursor.
+- Remember the last picks between games instead of resetting to a_teal / n_blue.
+
 ## Indoor effects instead of clouds and wave
 
 Clouds and wave are hidden in the room background (their model still runs so the shared `rand()` sequence is unchanged). Ideas for indoor replacements:
