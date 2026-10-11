@@ -9,8 +9,22 @@ export const ASSETS_PATH = {
   SOUNDS: {},
 };
 
+/** IDs of selectable player characters */
+export const CHARACTER_IDS = ['pikachu'];
+export const DEFAULT_CHARACTER_ID = CHARACTER_IDS[0];
+
 const TEXTURES = ASSETS_PATH.TEXTURES;
 TEXTURES.PIKACHU = (i, j) => `pikachu/pikachu_${i}_${j}.png`;
+/**
+ * Texture name of a player character frame
+ * @param {string} characterId one of CHARACTER_IDS
+ * @param {number} i state
+ * @param {number} j frame number
+ */
+TEXTURES.PLAYER = (characterId, i, j) =>
+  characterId === 'pikachu'
+    ? TEXTURES.PIKACHU(i, j)
+    : `players/${characterId}/${characterId}_${i}_${j}.png`;
 TEXTURES.BALL = (s) => `ball/ball_${s}.png`;
 TEXTURES.NUMBER = (n) => `number/number_${n}.png`;
 

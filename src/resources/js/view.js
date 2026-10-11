@@ -10,7 +10,11 @@ import { AnimatedSprite } from '@pixi/sprite-animated';
 import { Sprite } from '@pixi/sprite';
 import { Container } from '@pixi/display';
 import { Cloud, Wave, cloudAndWaveEngine } from './cloud_and_wave.js';
-import { ASSETS_PATH } from './assets_path.js';
+import {
+  ASSETS_PATH,
+  CHARACTER_IDS,
+  DEFAULT_CHARACTER_ID,
+} from './assets_path.js';
 
 /** @typedef {import('@pixi/loaders').LoaderResource} LoaderResource */
 /** @typedef {import('@pixi/core').Texture} Texture */
@@ -336,7 +340,18 @@ export class GameView {
 
     // Display objects below
     this.bgContainer = makeBGContainer(textures);
-    const playerSprites = makePlayerAnimatedSprites(textures);
+    this.playerTextureArrays = {};
+    for (const characterId of CHARACTER_IDS) {
+      this.playerTextureArrays[characterId] = makePlayerTextureArray(
+        textures,
+        characterId
+      );
+    }
+    const playerSprites = makePlayerAnimatedSprites(
+      this.playerTextureArrays,
+      DEFAULT_CHARACTER_ID,
+      DEFAULT_CHARACTER_ID
+    );
     this.player1 = playerSprites[0];
     this.player2 = playerSprites[1];
     this.ball = makeBallAnimatedSprites(textures);
@@ -452,6 +467,16 @@ export class GameView {
     for (const prop in this.messages) {
       this.messages[prop].visible = false;
     }
+  }
+
+  /**
+   * Set the characters of player 1 and player 2
+   * @param {string} player1CharacterId
+   * @param {string} player2CharacterId
+   */
+  setPlayerCharacters(player1CharacterId, player2CharacterId) {
+    this.player1.textures = this.playerTextureArrays[player1CharacterId];
+    this.player2.textures = this.playerTextureArrays[player2CharacterId];
   }
 
   /** @typedef {import("./physics").PikaPhysics} PikaPhysics */
@@ -793,12 +818,14 @@ function makeBGContainer(textures) {
 }
 
 /**
- * Make animated sprites for both players
+ * Make the 27-frame texture array of a player character
  * @param {Object.<string,Texture>} textures
- * @return {AnimatedSprite[]} [0] for player 1, [1] for player2
+ * @param {string} characterId
+ * @return {Texture[]}
  */
-function makePlayerAnimatedSprites(textures) {
-  const getPlayerTexture = (i, j) => textures[TEXTURES.PIKACHU(i, j)];
+function makePlayerTextureArray(textures, characterId) {
+  const getPlayerTexture = (i, j) =>
+    textures[TEXTURES.PLAYER(characterId, i, j)];
   const playerTextureArray = [];
   for (let i = 0; i < 7; i++) {
     if (i === 3) {
@@ -812,8 +839,29 @@ function makePlayerAnimatedSprites(textures) {
       }
     }
   }
-  const player1AnimatedSprite = new AnimatedSprite(playerTextureArray, false);
-  const player2AnimatedSprite = new AnimatedSprite(playerTextureArray, false);
+  return playerTextureArray;
+}
+
+/**
+ * Make animated sprites for both players
+ * @param {Object.<string,Texture[]>} playerTextureArrays texture arrays by character ID
+ * @param {string} player1CharacterId
+ * @param {string} player2CharacterId
+ * @return {AnimatedSprite[]} [0] for player 1, [1] for player2
+ */
+function makePlayerAnimatedSprites(
+  playerTextureArrays,
+  player1CharacterId,
+  player2CharacterId
+) {
+  const player1AnimatedSprite = new AnimatedSprite(
+    playerTextureArrays[player1CharacterId],
+    false
+  );
+  const player2AnimatedSprite = new AnimatedSprite(
+    playerTextureArrays[player2CharacterId],
+    false
+  );
 
   player1AnimatedSprite.anchor.x = 0.5;
   player1AnimatedSprite.anchor.y = 0.5;
