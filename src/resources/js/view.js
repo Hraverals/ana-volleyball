@@ -905,20 +905,26 @@ export class FadeInOut {
 }
 
 /**
- * Make sitting pikachu tiles
+ * Make the menu background tiles: the ANA characters in diagonal stripes.
+ * A tile's character depends on (column - row), so the diagonal scrolling
+ * of the menu wraps around without a visible jump.
  * @param {Object.<string,Texture>} textures
  * @return {Container}
  */
 function makeSittingPikachuTilesContainer(textures) {
   const container = new Container();
-  const texture = textures[TEXTURES.SITTING_PIKACHU];
-  const w = texture.width;
-  const h = texture.height;
+  const tileTextures = CHARACTER_IDS.map(
+    (id) =>
+      textures[TEXTURES.MENU_TILE(id)] || textures[TEXTURES.SITTING_PIKACHU]
+  );
+  const n = tileTextures.length;
+  const w = tileTextures[0].width;
+  const h = tileTextures[0].height;
 
   let tile;
   for (let j = 0; j < Math.floor(304 / h) + 2; j++) {
     for (let i = 0; i < Math.floor(432 / w) + 2; i++) {
-      tile = new Sprite(texture);
+      tile = new Sprite(tileTextures[(((i - j) % n) + n) % n]);
       addChildToParentAndSetLocalPosition(container, tile, w * i, h * j);
     }
   }

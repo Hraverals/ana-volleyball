@@ -8,6 +8,8 @@ added or replaced by name:
 
 - players/{id}/{id}_{state}_{frame}.png for each character
 - objects/background.png (432x304) and objects/net.png
+- title, logo and menu textures from tools/pixelart/titles.py (replacing the
+  Pokémon / Pikachu ones under the same names)
 
 The whole sheet is then repacked with a simple shelf packer and written in
 the same TexturePacker "JSON Hash" format, so running this again gives the
@@ -26,6 +28,7 @@ sys.path.insert(0, os.path.join(HERE, 'pixelart'))
 from background import build_background, build_net  # noqa: E402
 from characters import PALETTES, build_frame  # noqa: E402
 from poses import POSES  # noqa: E402
+from titles import textures as title_textures  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 SHEET_DIR = os.path.join(ROOT, 'src', 'resources', 'assets', 'images')
@@ -59,6 +62,7 @@ def ana_textures():
             out[name] = build_frame(character_id, pose)
     out['objects/background.png'] = build_background()
     out['objects/net.png'] = build_net()
+    out.update(title_textures())
     return out
 
 

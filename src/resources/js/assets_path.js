@@ -59,6 +59,8 @@ TEXTURES.WITH_FRIEND = 'messages/ja/with_friend.png';
 TEXTURES.GAME_START = 'messages/ja/game_start.png';
 
 TEXTURES.SITTING_PIKACHU = 'sitting_pikachu.png';
+/** menu background tile of a character */
+TEXTURES.MENU_TILE = (characterId) => `menu/tile_${characterId}.png`;
 
 const SOUNDS = ASSETS_PATH.SOUNDS;
 SOUNDS.BGM = '../resources/assets/sounds/bgm.mp3';
