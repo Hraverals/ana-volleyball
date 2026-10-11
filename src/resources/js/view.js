@@ -14,7 +14,7 @@ import { Cloud, Wave, cloudAndWaveEngine } from './cloud_and_wave.js';
 import {
   ASSETS_PATH,
   CHARACTER_IDS,
-  DEFAULT_CHARACTER_ID,
+  DEFAULT_CHARACTER_IDS,
 } from './assets_path.js';
 
 /** @typedef {import('@pixi/loaders').LoaderResource} LoaderResource */
@@ -359,8 +359,8 @@ export class GameView {
     }
     const playerSprites = makePlayerAnimatedSprites(
       this.playerTextureArrays,
-      DEFAULT_CHARACTER_ID,
-      DEFAULT_CHARACTER_ID
+      DEFAULT_CHARACTER_IDS[0],
+      DEFAULT_CHARACTER_IDS[1]
     );
     this.player1 = playerSprites[0];
     this.player2 = playerSprites[1];
@@ -787,8 +787,14 @@ function makeBGContainer(textures) {
 
   // net (whiteboard)
   if (textures[TEXTURES.NET]) {
+    // centered on the net pillar (x = 216); its top is at y = 176
     const net = new Sprite(textures[TEXTURES.NET]);
-    addChildToParentAndSetLocalPosition(bgContainer, net, 213, 176);
+    addChildToParentAndSetLocalPosition(
+      bgContainer,
+      net,
+      216 - net.texture.width / 2,
+      176
+    );
   } else {
     let tile = new Sprite(textures[TEXTURES.NET_PILLAR_TOP]);
     addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 176);

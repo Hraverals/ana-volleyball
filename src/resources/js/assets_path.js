@@ -10,8 +10,9 @@ export const ASSETS_PATH = {
 };
 
 /** IDs of selectable player characters */
-export const CHARACTER_IDS = ['pikachu'];
-export const DEFAULT_CHARACTER_ID = CHARACTER_IDS[0];
+export const CHARACTER_IDS = ['a_teal', 'n_blue', 'a_red'];
+/** characters used until the players choose (player 1, player 2) */
+export const DEFAULT_CHARACTER_IDS = ['a_teal', 'n_blue'];
 
 const TEXTURES = ASSETS_PATH.TEXTURES;
 TEXTURES.PIKACHU = (i, j) => `pikachu/pikachu_${i}_${j}.png`;
@@ -22,9 +23,7 @@ TEXTURES.PIKACHU = (i, j) => `pikachu/pikachu_${i}_${j}.png`;
  * @param {number} j frame number
  */
 TEXTURES.PLAYER = (characterId, i, j) =>
-  characterId === 'pikachu'
-    ? TEXTURES.PIKACHU(i, j)
-    : `players/${characterId}/${characterId}_${i}_${j}.png`;
+  `players/${characterId}/${characterId}_${i}_${j}.png`;
 TEXTURES.BALL = (s) => `ball/ball_${s}.png`;
 TEXTURES.NUMBER = (n) => `number/number_${n}.png`;
 
