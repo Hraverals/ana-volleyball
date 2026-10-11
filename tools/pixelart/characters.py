@@ -1,227 +1,233 @@
-"""Part definitions of the ANA characters (64x64 frames, facing right).
+"""Part definitions of the ANA characters (64x64 frames, side view facing
+right, like the original Pikachu frames).
 
-A frame is built from parts: back arm, ears, body, front arm, face and
-highlights. A pose moves, rotates or swaps those parts, so every frame is
-drawn from the same definitions and reads as the same character.
+Parts: tail, ear, back foot, body (head + snout + torso shaded as one),
+front foot, arm, face stamps and jelly highlights. A pose moves, rotates or
+swaps those parts, so every frame is drawn from the same definitions and
+reads as the same character.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
-from pixelkit import (Canvas, Part, ellipse, grid, hex_rgb, round_poly,
-                      transform)
+from pixelkit import Canvas, Part, edge, ellipse, grid, hex_rgb, transform
 
 SIZE = 64
 
 WHITE = hex_rgb('#ffffff')
-INK = hex_rgb('#1d1a2b')       # eyes, nose, mouth line
+INK = hex_rgb('#16141f')       # eyes, nose, mouth
 MOUTH = hex_rgb('#7a2a3a')     # inside of the mouth
 TONGUE = hex_rgb('#ff8fa0')
-BLUSH = hex_rgb('#ff9fb4')
+BLUSH = hex_rgb('#f59aaa')
+SWEAT = hex_rgb('#8fd0ff')
 
 # Ramps: [outline, shade 2, shade 1, base, light]
 PALETTES = {
     'a_teal': {
-        'body': ['#0b4a4d', '#178a87', '#2fb6ad', '#4fd6c9', '#90f1e5'],
-        'ear_inner': ['#0b4a4d', '#d2f7f1', '#e9fcf9', '#ffffff'],
-        'letter': 'A',
+        'body': ['#0f6663', '#26a39b', '#3cc2b6', '#62dccf', '#a6f3ea'],
+        'ear_inner': '#e6fcf9',
+        'eyes': 'open',
     },
     'n_blue': {
-        'body': ['#14306e', '#2a56b0', '#3c73d6', '#5a91ec', '#9cc0fa'],
-        'ear_inner': ['#14306e', '#f59aaa', '#ffb3c1', '#ffd0d9'],
-        'letter': 'N',
+        'body': ['#173a86', '#2f5fc0', '#4377dc', '#6595ef', '#a9c8fb'],
+        'ear_inner': '#ffb3c1',
+        'eyes': 'closed',
     },
     'a_red': {
-        'body': ['#5e1a1c', '#b23a3a', '#d9534f', '#f2716a', '#ffaaa2'],
-        'ear_inner': ['#5e1a1c', '#f59aaa', '#ffb3c1', '#ffd0d9'],
-        'letter': 'A',
+        'body': ['#7a1f24', '#c23c3c', '#de5650', '#f4766d', '#ffb0a8'],
+        'ear_inner': '#ffc4cd',
+        'eyes': 'open',
     },
 }
 
 
 @dataclass
 class Pose:
-    """Placement of the parts for one frame. Angles are in degrees,
-    clockwise on screen; offsets are in pixels."""
-    dx: float = 0.0            # whole-body offset
+    """Placement of the parts for one frame. Angles are degrees, clockwise
+    on screen; offsets are pixels relative to the neutral standing pose."""
+    dx: float = 0.0            # whole character offset
     dy: float = 0.0
-    tilt: float = 0.0          # whole-body rotation around the hips
-    squash: float = 1.0        # vertical scale of the body (1 = none)
-    legs: float = 0.0          # extra spread of the legs
-    back_arm: float = 0.0      # rotation of the back (left) arm
-    front_arm: float = 0.0     # rotation of the front (right) arm
-    ear_tilt: float = 0.0
-    eyes: str = 'open'         # open | closed | wince
-    mouth: str = 'smile'       # smile | open | flat | frown
-    face_dx: float = 0.0       # face shift relative to the body
-    face_dy: float = 0.0
-    extra: dict = field(default_factory=dict)
+    head_dx: float = 0.0       # head relative to the torso
+    head_dy: float = 0.0
+    torso_tilt: float = 0.0    # torso rotation around its center
+    torso_sx: float = 1.0      # torso scale (squash and stretch)
+    torso_sy: float = 1.0
+    arm: float = 50.0          # arm angle: 0 = forward, 90 = straight down
+    arm_len: float = 7.0
+    back_foot: tuple = (0.0, 0.0)
+    front_foot: tuple = (0.0, 0.0)
+    tail: tuple = (0.0, 0.0)   # tail offset
+    tail_scale: float = 1.0
+    ear_tilt: float = 0.0      # ear rotation (negative leans back)
+    eyes: str = ''             # '' = character default; open | closed |
+    #                            wince | dizzy | surprised
+    mouth: str = 'smile'       # smile | open | flat | frown | o
+    blush: bool = True
+    sweat: bool = False
+    grounded: bool = True      # keep the feet on the ground line
 
 
-# Body geometry in frame coordinates for the neutral pose.
-BODY_TOP = 13
-BODY_BOTTOM = 62
-HIP = (33.0, 53.0)  # rotation pivot of the whole body
-
-
-def _ramp(hexes):
-    return [hex_rgb(h) for h in hexes]
-
-
-def _body_mask_a(xs, ys, pose):
-    """A-shaped body: narrow round top, wide bottom split into two legs."""
-    sp = pose.legs
-    top = BODY_BOTTOM - (BODY_BOTTOM - BODY_TOP) * pose.squash
-    # a round head on a body that widens toward the feet
-    pts = [(23, top + 2), (43, top + 2), (56 + sp, BODY_BOTTOM),
-           (10 - sp, BODY_BOTTOM)]
-    body = round_poly(xs, ys, pts, 7.5)
-    head = ellipse(xs, ys, 33.0, top + 11.0, 14.0, 11.5 * pose.squash)
-    # the legs split under an arch, like the inside of an A
-    gap = ellipse(xs, ys, 33.0, BODY_BOTTOM + 1.0, 4.0 + sp * 0.5,
-                  12.0 * pose.squash)
-    return (body | head) & ~gap, top
-
-
-def _body_mask_n(xs, ys, pose):
-    """N-shaped body: two pillars joined by a diagonal."""
-    sp = pose.legs
-    top = BODY_BOTTOM - (BODY_BOTTOM - BODY_TOP) * pose.squash
-    left = round_poly(xs, ys, [(13 - sp, top + 4), (25 - sp, top + 4),
-                               (25 - sp, BODY_BOTTOM), (13 - sp, BODY_BOTTOM)],
-                      5.5)
-    right = round_poly(xs, ys, [(41 + sp, top), (53 + sp, top),
-                                (53 + sp, BODY_BOTTOM),
-                                (41 + sp, BODY_BOTTOM)], 5.5)
-    diag = round_poly(xs, ys, [(14, top + 6), (26, top + 4),
-                               (52, BODY_BOTTOM - 8), (40, BODY_BOTTOM - 6)],
-                      5.0)
-    return left | right | diag, top
+# Neutral geometry (frame coordinates)
+HEAD = (40.0, 23.0, 15.0, 13.5)    # cx, cy, rx, ry
+SNOUT = (53.5, 28.0, 5.0, 4.5)
+TORSO = (38.0, 44.0, 14.5, 16.0)
+EAR = (28.0, 11.0, 6.0, 6.0)
+TAIL = (17.0, 45.0, 11.5, 11.0)
+BACK_FOOT = (31.0, 59.0, 5.5, 3.2)
+FRONT_FOOT = (46.0, 59.0, 5.5, 3.0)
+SHOULDER = (45.0, 38.0)
 
 
 def build_frame(character_id, pose):
     pal = PALETTES[character_id]
-    body_ramp = _ramp(pal['body'])
-    inner_ramp = _ramp(pal['ear_inner'])
+    ramp = [hex_rgb(h) for h in pal['body']]
     canvas = Canvas(SIZE, SIZE)
-
     gx, gy = grid(SIZE, SIZE)
-    # sample points for the whole body (tilt around the hips, then offset)
-    bx, by = transform(gx, gy, HIP[0], HIP[1], pose.tilt, pose.dx, pose.dy)
+    x0, y0 = gx - pose.dx, gy - pose.dy
 
-    body_fn = _body_mask_a if pal['letter'] == 'A' else _body_mask_n
-    body, top = body_fn(bx, by, pose)
+    # head group (head, snout, ear, face) moves without rotating
+    hx, hy = x0 - pose.head_dx, y0 - pose.head_dy
+    head = ellipse(hx, hy, *HEAD)
+    snout = ellipse(hx, hy, *SNOUT)
 
-    # ears sit on the top corners of the letter
-    if pal['letter'] == 'A':
-        ear_l, ear_r = (22.5, top - 0.5), (43.5, top - 1.0)
-    else:
-        ear_l, ear_r = (17.0, top + 4.0), (48.0, top + 0.5)
-    ears = np.zeros_like(body)
-    inners = np.zeros_like(body)
-    for (ex, ey), toward in ((ear_l, 1), (ear_r, -1)):
-        ex2, ey2 = transform(bx, by, ex, ey, pose.ear_tilt * -toward)
-        ears |= ellipse(ex2, ey2, ex, ey, 5.5, 5.2)
-        inners |= ellipse(ex2, ey2, ex + toward * 0.5, ey - 0.8, 2.6, 2.3)
+    # torso: rotate and scale around its center
+    tcx, tcy = TORSO[0], TORSO[1]
+    tx, ty = transform(x0, y0, tcx, tcy, pose.torso_tilt)
+    tx = (tx - tcx) / pose.torso_sx + tcx
+    ty = (ty - tcy) / pose.torso_sy + tcy
+    torso = ellipse(tx, ty, *TORSO)
 
-    # arms are short nubs pivoting at the shoulders
-    sh_y = top + 21
-    back_shoulder = (18.0, sh_y)
-    front_shoulder = (48.0, sh_y)
-    ax, ay = transform(bx, by, *back_shoulder, angle=pose.back_arm)
-    back_arm = ellipse(ax, ay, back_shoulder[0] - 4.5, back_shoulder[1] + 4.0,
-                       6.5, 3.6)
-    ax, ay = transform(bx, by, *front_shoulder, angle=pose.front_arm)
-    front_arm = ellipse(ax, ay, front_shoulder[0] + 4.5,
-                        front_shoulder[1] + 4.0, 6.5, 3.6)
+    def torso_point(px, py):
+        """Torso-space point -> frame point."""
+        a = np.radians(pose.torso_tilt)
+        vx = (px - tcx) * pose.torso_sx
+        vy = (py - tcy) * pose.torso_sy
+        return (vx * np.cos(a) - vy * np.sin(a) + tcx + pose.dx,
+                vx * np.sin(a) + vy * np.cos(a) + tcy + pose.dy)
 
-    Part(back_arm, body_ramp, radius=3.0, bias=-0.1).draw(canvas)
-    Part(ears, body_ramp, radius=4.0).draw(canvas)
-    Part(inners & ~body, inner_ramp, outline=False, flat=2).draw(canvas)
-    Part(body, body_ramp, radius=6.0, bias=0.05).draw(canvas)
-    Part(front_arm, body_ramp, radius=3.0).draw(canvas)
+    body = head | snout | torso
 
-    # face: stamped pixel patterns, placed on the body after the transform
-    fx = 36 + pose.face_dx
-    fy = top + 13 + pose.face_dy
-    _stamp_face(canvas, pose, fx, fy)
+    # ear on the back of the head, pivoting at its base
+    ex, ey, erx, ery = EAR
+    eax, eay = transform(hx, hy, ex + 2, ey + 5, pose.ear_tilt)
+    ear = ellipse(eax, eay, ex, ey, erx, ery)
+    inner = ellipse(eax, eay, ex + 0.4, ey + 0.4, 2.6, 2.6)
 
-    # jelly highlights on the upper left of the head and the near ear
-    hx, hy = 24, top + 3
-    for px, py in ((hx, hy), (hx + 1, hy), (hx - 1, hy + 1)):
-        _put(canvas, pose, px, py, WHITE)
+    # tail behind the torso
+    tlx, tly = torso_point(TAIL[0], TAIL[1])
+    tlx += pose.tail[0]
+    tly += pose.tail[1]
+    tail = ellipse(gx, gy, tlx, tly, TAIL[2] * pose.tail_scale,
+                   TAIL[3] * pose.tail_scale)
+
+    feet = []
+    for base, off in ((BACK_FOOT, pose.back_foot),
+                      (FRONT_FOOT, pose.front_foot)):
+        fx, fy = torso_point(base[0], base[1])
+        if pose.grounded:
+            fy = base[1]
+        feet.append(ellipse(gx, gy, fx + off[0], fy + off[1],
+                            base[2], base[3]))
+
+    # arm: a flat paddle hanging from the shoulder
+    sx, sy = torso_point(*SHOULDER)
+    a = np.radians(pose.arm)
+    acx = sx + np.cos(a) * pose.arm_len * 0.75
+    acy = sy + np.sin(a) * pose.arm_len * 0.75
+    ax, ay = transform(gx, gy, acx, acy, -pose.arm)
+    arm = ellipse(ax, ay, acx, acy, pose.arm_len, 2.8)
+
+    # draw back to front
+    Part(tail, ramp, radius=6.0, bias=-0.12).draw(canvas)
+    Part(ear, ramp, radius=3.5, bias=-0.35).draw(canvas)
+    canvas.paint(inner & ear & ~edge(ear) & ~body, hex_rgb(pal['ear_inner']))
+    Part(feet[0] & ~body, ramp, radius=2.5, bias=-0.15).draw(canvas)
+    Part(body, ramp, radius=7.0, bias=-0.12).draw(canvas)
+    Part(feet[1], ramp, radius=2.5).draw(canvas)
+    Part(arm, ramp, radius=2.0, bias=0.1).draw(canvas)
+
+    # face follows the head and stays upright
+    ox, oy = pose.dx + pose.head_dx, pose.dy + pose.head_dy
+    _stamp_face(canvas, pose, pal, ox, oy)
+
+    # jelly highlights on the upper left of the head and the tail
+    for px, py in ((33, 12), (34, 12), (32, 13)):
+        _put(canvas, px + ox, py + oy, WHITE)
+    s = pose.tail_scale
+    for px, py in ((-5, -8), (-4, -9)):
+        _put(canvas, tlx + px * s, tly + py * s, WHITE)
 
     return canvas.image()
 
 
-def _place(pose, x, y):
-    """Forward-map a body-space point to frame space."""
-    a = np.radians(pose.tilt)
-    cx, cy = HIP
-    rx = (x - cx) * np.cos(a) - (y - cy) * np.sin(a) + cx + pose.dx
-    ry = (x - cx) * np.sin(a) + (y - cy) * np.cos(a) + cy + pose.dy
-    return int(round(rx - 0.5)), int(round(ry - 0.5))
+def _put(canvas, x, y, color):
+    """Paint one pixel, only on top of already drawn pixels."""
+    x, y = int(round(x)), int(round(y))
+    if 0 <= x < SIZE and 0 <= y < SIZE and canvas.px[y, x, 3]:
+        canvas.px[y, x] = (*color, 255)
 
 
-def _put(canvas, pose, x, y, color):
-    px, py = _place(pose, x + 0.5, y + 0.5)
-    if 0 <= px < SIZE and 0 <= py < SIZE:
-        canvas.px[py, px] = (*color, 255)
-
-
-def _stamp(canvas, pose, x0, y0, rows, colors):
+def _stamp(canvas, x0, y0, rows, colors):
     for j, row in enumerate(rows):
         for i, ch in enumerate(row):
             if ch in colors:
-                _put(canvas, pose, x0 + i, y0 + j, colors[ch])
+                _put(canvas, x0 + i, y0 + j, colors[ch])
 
 
-EYE_OPEN = ['.WWW.',
-            'WWHKW',
-            'WWKKW',
-            '.WWW.']
-EYE_CLOSED = ['.KK.',
-              'K..K']
-EYE_WINCE = ['K..',
-             '.KK',
-             'K..']
+# (vertical offset, pattern) per eye type
+EYES = {
+    # big round eye with highlight pixels toward the upper left
+    'open': (0, ['.KKK.',
+                 'KKWWK',
+                 'KKWWK',
+                 'KKKKK',
+                 'KWKKK',
+                 '.KKK.']),
+    'closed': (2, ['.KKK.',
+                   'K...K']),
+    'wince': (0, ['K....',
+                  '.KK..',
+                  '...K.',
+                  '.KK..',
+                  'K....']),
+    'dizzy': (0, ['KKKK.',
+                  '...K.',
+                  '.K.K.',
+                  '.KKK.']),
+    'surprised': (0, ['.KKK.',
+                      'KWWWK',
+                      'KWKWK',
+                      'KWWWK',
+                      '.KKK.']),
+}
 
 MOUTHS = {
-    'smile': ['K.....K',
-              '.KMMMK.',
-              '.KMTTK.',
-              '..KKK..'],
-    'open': ['.KKK.',
-             'KMMMK',
-             'KMTMK',
-             '.KKK.'],
+    'smile': ['K...',
+              '.KKK'],
+    'open': ['KKKK',
+             '.KMT',
+             '..KK'],
     'flat': ['.KKK.'],
     'frown': ['.KKK.',
               'K...K'],
+    'o': ['.KK.',
+          'KMMK',
+          '.KK.'],
 }
 
 
-def _stamp_face(canvas, pose, fx, fy):
+def _stamp_face(canvas, pose, pal, ox, oy):
     colors = {'W': WHITE, 'H': WHITE, 'K': INK, 'M': MOUTH, 'T': TONGUE,
-              'B': BLUSH}
-    fx, fy = int(fx), int(fy)
-    if pose.eyes == 'open':
-        eye = EYE_OPEN
-        _stamp(canvas, pose, fx - 9, fy - 3, eye, colors)
-        _stamp(canvas, pose, fx + 4, fy - 3, eye, colors)
-    elif pose.eyes == 'closed':
-        _stamp(canvas, pose, fx - 7, fy - 1, EYE_CLOSED, colors)
-        _stamp(canvas, pose, fx + 3, fy - 1, EYE_CLOSED, colors)
-    else:
-        _stamp(canvas, pose, fx - 6, fy - 2, EYE_WINCE, colors)
-        _stamp(canvas, pose, fx + 3, fy - 2,
-               [r[::-1] for r in EYE_WINCE], colors)
-    # nose
-    _stamp(canvas, pose, fx - 1, fy + 1, ['KK'], colors)
-    # mouth
-    m = MOUTHS[pose.mouth]
-    _stamp(canvas, pose, fx - len(m[0]) // 2, fy + 2, m, colors)
-    # blush
-    _stamp(canvas, pose, fx - 12, fy + 2, ['BBB', 'BBB'], colors)
-    _stamp(canvas, pose, fx + 9, fy + 2, ['BBB', 'BBB'], colors)
+              'B': BLUSH, 'S': SWEAT}
+    eyes = pose.eyes or pal['eyes']
+    if eyes == 'open' and pal['eyes'] == 'closed':
+        eyes = 'closed'
+    dy, rows = EYES[eyes]
+    _stamp(canvas, 45 + ox, 16 + dy + oy, rows, colors)
+    _stamp(canvas, 57 + ox, 25 + oy, ['KK', 'KK'], colors)  # nose
+    _stamp(canvas, 51 + ox, 30 + oy, MOUTHS[pose.mouth], colors)
+    if pose.blush:
+        _stamp(canvas, 40 + ox, 25 + oy, ['.BBB.', 'BBBBB', '.BBB.'], colors)
+    if pose.sweat:
+        _stamp(canvas, 36 + ox, 12 + oy, ['.S', 'SS', 'SS'], colors)

@@ -39,7 +39,7 @@ def save(img, name):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    save(build_frame('a_teal', Pose(back_arm=-25, front_arm=25)), 'a_teal_0_0')
+    save(build_frame('a_teal', Pose()), 'a_teal_0_0')
     save(original_frame('pikachu/pikachu_0_0.png'), 'pikachu_0_0')
 
     bg = build_background()
