@@ -9,6 +9,7 @@
 import { AnimatedSprite } from '@pixi/sprite-animated';
 import { Sprite } from '@pixi/sprite';
 import { Container } from '@pixi/display';
+import { Texture } from '@pixi/core';
 import { Cloud, Wave, cloudAndWaveEngine } from './cloud_and_wave.js';
 import {
   ASSETS_PATH,
@@ -17,12 +18,21 @@ import {
 } from './assets_path.js';
 
 /** @typedef {import('@pixi/loaders').LoaderResource} LoaderResource */
-/** @typedef {import('@pixi/core').Texture} Texture */
 
 const TEXTURES = ASSETS_PATH.TEXTURES;
 
 /** @constant @type {number} number of clouds to be rendered */
 const NUM_OF_CLOUDS = 10;
+
+/**
+ * @constant @type {boolean} whether clouds and wave are shown.
+ * The room background has no sky, so they are hidden. Their model keeps
+ * running regardless, since it consumes the same rand() as the game.
+ */
+const SHOW_CLOUDS_AND_WAVE = false;
+
+/** @constant @type {number} color of the placeholder background used until the background texture is ready */
+const PLACEHOLDER_BG_COLOR = 0x8a8f99;
 
 /**
  * Class representing intro view where the man with a briefcase mark appears
@@ -424,6 +434,8 @@ export class GameView {
     this.cloudContainer.y = 0;
     this.waveContainer.x = 0;
     this.waveContainer.y = 0;
+    this.cloudContainer.visible = SHOW_CLOUDS_AND_WAVE;
+    this.waveContainer.visible = SHOW_CLOUDS_AND_WAVE;
 
     this.messages.ready.x = 176;
     this.messages.ready.y = 38;
@@ -579,6 +591,9 @@ export class GameView {
     const wave = this.wave;
 
     cloudAndWaveEngine(cloudArray, wave);
+    if (!SHOW_CLOUDS_AND_WAVE) {
+      return;
+    }
 
     for (let i = 0; i < NUM_OF_CLOUDS; i++) {
       const cloud = cloudArray[i];
@@ -749,69 +764,38 @@ function makeSittingPikachuTilesContainer(textures) {
 
 /**
  * Make background
+ * A single 432x304 background texture is drawn, and the net is put on it.
+ * Until the textures are ready, a plain color background and the original
+ * net pillar are drawn instead.
  * @param {Object.<string,Texture>} textures
  * @return {Container}
  */
 function makeBGContainer(textures) {
   const bgContainer = new Container();
 
-  // sky
-  let tile;
-  let texture = textures[TEXTURES.SKY_BLUE];
-  for (let j = 0; j < 12; j++) {
-    for (let i = 0; i < 432 / 16; i++) {
-      tile = new Sprite(texture);
-      addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 16 * j);
+  // background
+  let bg;
+  if (textures[TEXTURES.BACKGROUND]) {
+    bg = new Sprite(textures[TEXTURES.BACKGROUND]);
+  } else {
+    bg = new Sprite(Texture.WHITE);
+    bg.tint = PLACEHOLDER_BG_COLOR;
+    bg.width = 432;
+    bg.height = 304;
+  }
+  addChildToParentAndSetLocalPosition(bgContainer, bg, 0, 0);
+
+  // net (whiteboard)
+  if (textures[TEXTURES.NET]) {
+    const net = new Sprite(textures[TEXTURES.NET]);
+    addChildToParentAndSetLocalPosition(bgContainer, net, 213, 176);
+  } else {
+    let tile = new Sprite(textures[TEXTURES.NET_PILLAR_TOP]);
+    addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 176);
+    for (let j = 0; j < 12; j++) {
+      tile = new Sprite(textures[TEXTURES.NET_PILLAR]);
+      addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 184 + 8 * j);
     }
-  }
-
-  // mountain
-  texture = textures[TEXTURES.MOUNTAIN];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 0, 188);
-
-  // ground_red
-  texture = textures[TEXTURES.GROUND_RED];
-  for (let i = 0; i < 432 / 16; i++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 248);
-  }
-
-  // ground_line
-  texture = textures[TEXTURES.GROUND_LINE];
-  for (let i = 1; i < 432 / 16 - 1; i++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 264);
-  }
-  texture = textures[TEXTURES.GROUND_LINE_LEFT_MOST];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 0, 264);
-  texture = textures[TEXTURES.GROUND_LINE_RIGHT_MOST];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 432 - 16, 264);
-
-  // ground_yellow
-  texture = textures[TEXTURES.GROUND_YELLOW];
-  for (let j = 0; j < 2; j++) {
-    for (let i = 0; i < 432 / 16; i++) {
-      tile = new Sprite(texture);
-      addChildToParentAndSetLocalPosition(
-        bgContainer,
-        tile,
-        16 * i,
-        280 + 16 * j
-      );
-    }
-  }
-
-  // net pillar
-  texture = textures[TEXTURES.NET_PILLAR_TOP];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 176);
-  texture = textures[TEXTURES.NET_PILLAR];
-  for (let j = 0; j < 12; j++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 184 + 8 * j);
   }
 
   return bgContainer;
