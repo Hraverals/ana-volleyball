@@ -62,7 +62,8 @@ class Painter:
 
 
 # --- palettes (already muted; a final pass lowers saturation further) ---
-WALL = ['#8a867d', '#9c988f', '#a6a298', '#b0aca2']
+# white wallpaper: [edge line, stripe, base, light]
+WALL = ['#b9b5ac', '#e2dfd8', '#ecebe6', '#f6f5f1']
 WOOD = ['#5d4c38', '#86704f', '#9e8761', '#b29b73']
 WOOD_LIGHT = ['#6a5940', '#9b8661', '#b19b72', '#c2ad84']
 METAL = ['#4d5155', '#6f7478', '#878c90', '#a1a5a8']
@@ -93,20 +94,23 @@ def build_background(seed=7):
 def _wall(p):
     o, d, b, l = (C(h) for h in WALL)
     p.rect(0, 0, W, FLOOR_Y, b)
-    # ceiling edge and a soft darker band under it
-    p.rect(0, 0, W, 6, C('#bdbab2'))
+    # wallpaper: faint vertical stripes with a light line beside each
+    for x in range(4, W, 12):
+        p.rect(x, 0, x + 2, FLOOR_Y, d)
+        p.rect(x + 2, 0, x + 3, FLOOR_Y, l)
+    # tiny dots between the stripes
+    for y in range(14, FLOOR_Y - 10, 12):
+        for x in range(10, W, 12):
+            p.px(x + (6 if (y // 12) % 2 else 0) % 12, y, d)
+    # ceiling molding and a soft shade under it
+    p.rect(0, 0, W, 6, C('#f4f3ef'))
     p.rect(0, 6, W, 7, o)
-    p.rect(0, 7, W, 20, d)
-    for y in range(20, 26, 2):
-        p.rect(0, y, W, y + 1, d)
-    # wall panel seams
-    for x in (64, 168, 300, 404):
-        p.rect(x, 7, x + 1, FLOOR_Y - 8, d)
-        p.rect(x + 1, 7, x + 2, FLOOR_Y - 8, l)
+    p.rect(0, 7, W, 9, C('#d9d6cf'))
+    p.rect(0, 9, W, 11, d)
     # baseboard
     p.rect(0, FLOOR_Y - 8, W, FLOOR_Y - 7, l)
-    p.rect(0, FLOOR_Y - 7, W, FLOOR_Y, C('#7c7972'))
-    p.rect(0, FLOOR_Y - 1, W, FLOOR_Y, o)
+    p.rect(0, FLOOR_Y - 7, W, FLOOR_Y, C('#a9a59c'))
+    p.rect(0, FLOOR_Y - 1, W, FLOOR_Y, C('#8a867d'))
 
 
 def _floor(p):
