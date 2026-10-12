@@ -8,7 +8,7 @@ Out of scope for the current ANA remake work. Recorded here instead of being don
 - The Korean `game_start.png` and the common `ready.png` / `game_end.png` messages still use the original lettering (no Japanese left); restyle them to match the new jelly logo if wanted.
 - Title and menu textures are rasterized from Windows fonts (Arial Black, Malgun Gothic). Bundle an open pixel font so `tools/pixelart/titles.py` gives the same output on any OS.
 - Sound effects (`WAVE140`–`WAVE144`, Pikachu voices) stay as they are until new sounds are prepared separately; swap the files behind `SOUNDS.*` in `assets_path.js` when they are ready.
-- The "playing inside another website" notice links to the GitHub repository; point it to the game's own address once ANA Volleyball is deployed (for example on GitHub Pages).
+- The "playing inside another website" notice links to the GitHub Pages address (https://hraverals.github.io/ana-volleyball/); switch it to the club server's address when the game moves there.
 
 ## Character select
 
