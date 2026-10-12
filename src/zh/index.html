@@ -4,27 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>皮卡丘打排球</title>
-    <meta name="description" content="線上玩皮卡丘打排球" />
+    <title>ANA排球</title>
+    <meta name="description" content="線上玩ANA排球" />
     <meta name="author" content="Kyutae Lee" />
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#FFFFFF" />
-    <meta name="apple-mobile-web-app-title" content="皮卡丘打排球" />
+    <meta name="apple-mobile-web-app-title" content="ANA排球" />
     <link
       rel="apple-touch-icon"
       sizes="192x192"
-      href="../resources/assets/images/IDI_PIKAICON-1_gap_filled_192.png"
+      href="../resources/assets/images/ana_icon_192.png"
     />
     <link rel="manifest" href="./manifest.json" />
 
     <link
       rel="icon"
+      sizes="any"
+      href="../resources/assets/images/favicon_ana.ico"
+    />
+    <link
+      rel="icon"
       type="image/png"
       sizes="32x32"
-      href="../resources/assets/images/IDI_PIKAICON-0.png"
+      href="../resources/assets/images/ana_icon_32.png"
     />
     <link rel="stylesheet" href="../resources/style.css" />
   </head>
@@ -206,17 +211,16 @@
       </div>
       <div class="if-embedded-in-other-website hidden">
         <div class="limit-width">
-          It seems that you are playing this web version of
-          <span class="no-wrap">Pikachu Volleyball</span>
-          in some foreign website. If you visit the following link directly, you
-          can play the game in a pleasant environment without ads.
+          你似乎正在其他網站中遊玩
+          <span class="no-wrap">ANA排球</span>。
+          可以前往下方的專案頁面查看遊戲與原始碼。
           <div class="original-address">
-            The original address of this web version of Pikachu Volleyball:<br />
+            ANA排球 GitHub：<br />
             <a
-              href="https://gorisanson.github.io/pikachu-volleyball/zh/"
+              href="https://github.com/Hraverals/ana-volleyball"
               target="_blank"
               rel="noopener"
-              >https://gorisanson.github.io/pikachu-volleyball/zh/</a
+              >https://github.com/Hraverals/ana-volleyball</a
             >
           </div>
           <button type="button" class="btn-in-box">
@@ -227,44 +231,18 @@
       <div id="game-canvas-container">
         <div class="fade-in-box about" id="about-box">
           <div id="about-box-head">
-            <h1>皮卡丘打排球</h1>
+            <h1>ANA排球</h1>
             <p class="languages">
               &check; Chinese(中文) |
               <a href="../en/" target="_self">English</a> |
               <a href="../ko/" target="_self">Korean(한국어)</a>
             </p>
-            <p class="p2p-online-version">
-              你也可以遊玩<a
-                href="https://gorisanson.github.io/pikachu-volleyball-p2p-online/en/"
-                >線上玩家對戰版本</a
-              >。
-            </p>
-            <p class="super-ai-edition">
-              你也可以遊玩由
-              <a href="https://blog.duckll.tw/" target="_blank" rel="noopener"
-                >DuckLL</a
-              >
-              開發的<a
-                href="https://pika.duckll.tw/zh/"
-                target="_blank"
-                rel="noopener"
-                >超級 AI 版本</a
-              >。
-            </p>
-            <p class="seungsu-ai">
-              你也可以遊玩由
-              <a href="https://seungsu.com/" target="_blank" rel="noopener"
-                >Sungsu Kim</a
-              >
-              開發的<a
-                href="https://seungsu.com/pikachu"
-                target="_blank"
-                rel="noopener"
-                >Pikachu Volleyball AI</a
-              >。
+            <p class="original-by">
+              ANA排球是以忠南大學 ANA
+              社團的角色與社團教室重新打造的皮卡丘打排球重製版。
             </p>
             <p class="original-by">
-              原始版的的皮卡丘打排球 (対戦ぴかちゅ～　ﾋﾞｰﾁﾊﾞﾚｰ編) 是由
+              原始版的皮卡丘打排球 (対戦ぴかちゅ～　ﾋﾞｰﾁﾊﾞﾚｰ編) 是由
               <br />
               1997 (C)
               <span class="no-wrap">SACHI SOFT / SAWAYAKAN Programmers</span
@@ -274,24 +252,29 @@
               所開發的
             </p>
             <p class="reverse-engineered-by">
-              此遊戲是由
+              透過逆向工程將原始遊戲實作為網頁版的是
               <span class="no-wrap"
                 ><a href="https://gorisanson.github.io/">Kyutae Lee</a></span
-              >
-              <br />
-              透過逆向工程技術解析原始遊戲並將其實作至此線上版本
+              ><br />
+              本重製版以該網頁版為基礎製作。
             </p>
             <p class="source-code-on">
-              你可以前往
+              原始碼：
+              <a
+                href="https://github.com/Hraverals/ana-volleyball"
+                target="_blank"
+                rel="noopener"
+                >ANA排球</a
+              >
+              |
               <a
                 href="https://github.com/gorisanson/pikachu-volleyball"
                 target="_blank"
                 rel="noopener"
-                >GitHub</a
+                >原始網頁版</a
               >
-              檢視原始碼
             </p>
-            <p class="release-date">釋出日期: 2020-03-26</p>
+            <p class="release-date">原始網頁版釋出日期: 2020-03-26</p>
             <p class="update-history-on">
               <a href="./update-history/" target="_self">更新紀錄</a>
             </p>
@@ -303,17 +286,18 @@
                 src="../resources/assets/images/screenshot.png"
                 width="1728"
                 height="1216"
-                alt="皮卡丘打排球之遊戲截圖"
+                alt="ANA排球之遊戲截圖"
               />
             </div>
             <p>
-              皮卡丘打排球是1997年時由日本開發的一款Windows遊戲。此遊戲在我小的
-              時候於韓國非常流行。我時常與朋友一同遊玩此遊戲。
+              ANA排球是忠南大學 ANA 社團的三隻果凍角色——土耳其藍的 A、藍色的
+              N、珊瑚紅的 A——在社團教室裡打排球的遊戲。畫面中央的球網是社團教室
+              裡附輪子的白板從側面看的樣子，球就在白板兩側來回飛越。
             </p>
             <p>
-              此線上版本是透過對原始遊戲作逆向工程，並將其利用JavaScript實做出
-              來。此遊戲能直接在瀏覽器上執行，因此有別於原先的遊戲，可以不受作業
-              系統的限制。
+              遊戲規則、物理與操作手感都與逆向工程還原的皮卡丘打排球網頁版完全相同
+              （原始遊戲是1997年在日本開發的Windows遊戲）。此遊戲直接在瀏覽器上
+              執行，因此不受作業系統的限制。
             </p>
             <p class="margin-top"><span class="thick">Controls:</span></p>
             <div class="align-center-horizontally">
@@ -328,10 +312,13 @@
             </div>
             <p class="margin-top">
               <span class="thick">小提示 1:</span><br />
-              與原始遊戲相同，在選擇
-              <span class="no_wrap">"1人でぴかちゅ~"</span> 來與電腦遊戲對戰時，
-              透過按下「Z鍵」開始玩可成為 1P ，而若是按下「Enter鍵」遊玩則會成為
-              2P。
+              與原始遊戲相同，在選單選擇
+              <span class="no_wrap">"VS COMPUTER"</span>
+              時，按 "Z" 鍵選擇即以左側（1P）與電腦對戰，按 Enter
+              鍵選擇則以右側（2P）對戰。接著在角色選擇畫面用左右鍵挑選角色，
+              再按同一個鍵（Z 或 Enter）確定；電腦的角色會隨機決定。選擇
+              <span class="no_wrap">"VS FRIEND"</span> 時，1P 與 2P
+              各自挑選角色。
             </p>
             <p class="margin-top">
               <span class="thick">小提示 2:</span><br />

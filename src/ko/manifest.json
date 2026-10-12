@@ -1,19 +1,19 @@
 {
-  "name": "피카츄 배구",
-  "short_name": "피카츄 배구",
+  "name": "ANA 배구",
+  "short_name": "ANA 배구",
   "icons": [
     {
-      "src": "../resources/assets/images/IDI_PIKAICON-1_gap_filled.png",
+      "src": "../resources/assets/images/ana_icon_48.png",
       "type": "image/png",
       "sizes": "48x48"
     },
     {
-      "src": "../resources/assets/images/IDI_PIKAICON-1_gap_filled_192.png",
+      "src": "../resources/assets/images/ana_icon_192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "../resources/assets/images/IDI_PIKAICON-1_gap_filled_512.png",
+      "src": "../resources/assets/images/ana_icon_512.png",
       "type": "image/png",
       "sizes": "512x512"
     }

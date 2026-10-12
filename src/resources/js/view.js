@@ -9,16 +9,37 @@
 import { AnimatedSprite } from '@pixi/sprite-animated';
 import { Sprite } from '@pixi/sprite';
 import { Container } from '@pixi/display';
+import { Texture } from '@pixi/core';
 import { Cloud, Wave, cloudAndWaveEngine } from './cloud_and_wave.js';
-import { ASSETS_PATH } from './assets_path.js';
+import {
+  ASSETS_PATH,
+  CHARACTER_IDS,
+  DEFAULT_CHARACTER_IDS,
+} from './assets_path.js';
 
 /** @typedef {import('@pixi/loaders').LoaderResource} LoaderResource */
-/** @typedef {import('@pixi/core').Texture} Texture */
 
 const TEXTURES = ASSETS_PATH.TEXTURES;
 
 /** @constant @type {number} number of clouds to be rendered */
 const NUM_OF_CLOUDS = 10;
+
+/**
+ * @constant @type {boolean} whether clouds and wave are shown.
+ * The room background has no sky, so they are hidden. Their model keeps
+ * running regardless, since it consumes the same rand() as the game.
+ */
+const SHOW_CLOUDS_AND_WAVE = false;
+
+/** @constant @type {number} color of the placeholder background used until the background texture is ready */
+const PLACEHOLDER_BG_COLOR = 0x8a8f99;
+
+/** @constant @type {number[]} x coordinates of the character slots on the character select view */
+const SELECT_SLOT_X = [108, 216, 324];
+/** @constant @type {number} y coordinate of the characters on the character select view */
+const SELECT_SLOT_Y = 160;
+/** @constant @type {number[]} cursor colors of player 1 and player 2 */
+const SELECT_PLAYER_COLORS = [0xff6b6b, 0x6bb8ff];
 
 /**
  * Class representing intro view where the man with a briefcase mark appears
@@ -324,6 +345,163 @@ export class MenuView {
 }
 
 /**
+ * Class representing the character select view where each player picks
+ * one of the ANA characters
+ */
+export class CharacterSelectView {
+  /**
+   * Create a CharacterSelectView object
+   * @param {Object.<string,LoaderResource>} resources loader.resources
+   */
+  constructor(resources) {
+    const textures = resources[ASSETS_PATH.SPRITE_SHEET].textures;
+    this.container = new Container();
+
+    // the room, dimmed
+    const bg = new Sprite(
+      textures[TEXTURES.BACKGROUND]
+        ? textures[TEXTURES.BACKGROUND]
+        : Texture.WHITE
+    );
+    if (!textures[TEXTURES.BACKGROUND]) {
+      bg.tint = PLACEHOLDER_BG_COLOR;
+    }
+    bg.width = 432;
+    bg.height = 304;
+    this.container.addChild(bg);
+    const dim = new Sprite(Texture.WHITE);
+    dim.tint = 0x000000;
+    dim.alpha = 0.55;
+    dim.width = 432;
+    dim.height = 304;
+    this.container.addChild(dim);
+
+    // a pedestal and an animated character in each slot
+    this.slots = [];
+    for (let i = 0; i < CHARACTER_IDS.length; i++) {
+      const x = SELECT_SLOT_X[i];
+      const pedestal = new Sprite(Texture.WHITE);
+      pedestal.tint = 0x3a3d42;
+      pedestal.width = 96;
+      pedestal.height = 10;
+      pedestal.x = x - 48;
+      pedestal.y = SELECT_SLOT_Y + 62;
+      this.container.addChild(pedestal);
+
+      const character = new AnimatedSprite(
+        makePlayerTextureArray(textures, CHARACTER_IDS[i]),
+        false
+      );
+      character.anchor.x = 0.5;
+      character.anchor.y = 0.5;
+      character.scale.x = 2;
+      character.scale.y = 2;
+      character.x = x;
+      character.y = SELECT_SLOT_Y;
+      this.container.addChild(character);
+      this.slots.push(character);
+    }
+
+    // a colored frame and a number ("1" or "2") marking each player's pick
+    this.cursors = [];
+    for (let p = 0; p < 2; p++) {
+      const cursor = new Container();
+      const inset = p === 0 ? 0 : 4; // player 2's frame sits inside
+      const w = 112 - 2 * inset;
+      const h = 150 - 2 * inset;
+      const t = 3;
+      for (const [x, y, rw, rh] of [
+        [0, 0, w, t],
+        [0, h - t, w, t],
+        [0, 0, t, h],
+        [w - t, 0, t, h],
+      ]) {
+        const bar = new Sprite(Texture.WHITE);
+        bar.tint = SELECT_PLAYER_COLORS[p];
+        bar.x = x + inset;
+        bar.y = y + inset;
+        bar.width = rw;
+        bar.height = rh;
+        cursor.addChild(bar);
+      }
+      const number = makeSpriteWithAnchorXY(
+        textures,
+        TEXTURES.NUMBER(p + 1),
+        0.5,
+        0
+      );
+      number.x = p === 0 ? 24 : w - 24 + 2 * inset;
+      number.y = -36;
+      cursor.addChild(number);
+      this.container.addChild(cursor);
+      this.cursors.push(cursor);
+    }
+
+    this.selected = [0, 1];
+    this.confirmed = [false, false];
+    this.animationFrames = [0, 0, 0];
+    this.visible = false;
+  }
+
+  /** @return {boolean} Is visible? */
+  get visible() {
+    return this.container.visible;
+  }
+
+  /** @param {boolean} bool Is visible? */
+  set visible(bool) {
+    this.container.visible = bool;
+  }
+
+  /**
+   * Show the current picks
+   * @param {number[]} selected character index for player 1 and player 2
+   * @param {boolean[]} confirmed whether each player has confirmed
+   * @param {boolean[]} shown whether each player's cursor is shown
+   */
+  setSelection(selected, confirmed, shown) {
+    this.selected = selected.slice();
+    // a hidden pick (the computer's, before the human picks) stays hidden
+    this.confirmed = confirmed.map((c, p) => c && shown[p]);
+    for (let p = 0; p < 2; p++) {
+      const cursor = this.cursors[p];
+      cursor.visible = shown[p];
+      cursor.x = SELECT_SLOT_X[selected[p]] - 56;
+      cursor.y = SELECT_SLOT_Y - 82;
+      cursor.alpha = confirmed[p] ? 1 : 0.75;
+    }
+  }
+
+  /**
+   * Animate the characters: standing for the others, a little win
+   * animation for a confirmed pick
+   * @param {number} frameCounter
+   */
+  drawCharacters(frameCounter) {
+    for (let i = 0; i < this.slots.length; i++) {
+      const picked =
+        (this.confirmed[0] && this.selected[0] === i) ||
+        (this.confirmed[1] && this.selected[1] === i);
+      let frame;
+      if (picked) {
+        // state 5 (win): 0 -> 4 then hold
+        this.animationFrames[i] = Math.min(this.animationFrames[i] + 1, 24);
+        frame = getFrameNumberForPlayerAnimatedSprite(
+          5,
+          Math.floor(this.animationFrames[i] / 5)
+        );
+      } else {
+        // state 0 (standing): 0 -> 4 -> 0 back and forth
+        this.animationFrames[i] = 0;
+        const k = Math.floor(frameCounter / 4) % 8;
+        frame = getFrameNumberForPlayerAnimatedSprite(0, k < 5 ? k : 8 - k);
+      }
+      this.slots[i].gotoAndStop(frame);
+    }
+  }
+}
+
+/**
  * Class represent a game view where pikachus, ball, clouds, waves, and backgrounds are
  */
 export class GameView {
@@ -336,7 +514,18 @@ export class GameView {
 
     // Display objects below
     this.bgContainer = makeBGContainer(textures);
-    const playerSprites = makePlayerAnimatedSprites(textures);
+    this.playerTextureArrays = {};
+    for (const characterId of CHARACTER_IDS) {
+      this.playerTextureArrays[characterId] = makePlayerTextureArray(
+        textures,
+        characterId
+      );
+    }
+    const playerSprites = makePlayerAnimatedSprites(
+      this.playerTextureArrays,
+      DEFAULT_CHARACTER_IDS[0],
+      DEFAULT_CHARACTER_IDS[1]
+    );
     this.player1 = playerSprites[0];
     this.player2 = playerSprites[1];
     this.ball = makeBallAnimatedSprites(textures);
@@ -409,6 +598,8 @@ export class GameView {
     this.cloudContainer.y = 0;
     this.waveContainer.x = 0;
     this.waveContainer.y = 0;
+    this.cloudContainer.visible = SHOW_CLOUDS_AND_WAVE;
+    this.waveContainer.visible = SHOW_CLOUDS_AND_WAVE;
 
     this.messages.ready.x = 176;
     this.messages.ready.y = 38;
@@ -452,6 +643,16 @@ export class GameView {
     for (const prop in this.messages) {
       this.messages[prop].visible = false;
     }
+  }
+
+  /**
+   * Set the characters of player 1 and player 2
+   * @param {string} player1CharacterId
+   * @param {string} player2CharacterId
+   */
+  setPlayerCharacters(player1CharacterId, player2CharacterId) {
+    this.player1.textures = this.playerTextureArrays[player1CharacterId];
+    this.player2.textures = this.playerTextureArrays[player2CharacterId];
   }
 
   /** @typedef {import("./physics").PikaPhysics} PikaPhysics */
@@ -554,6 +755,9 @@ export class GameView {
     const wave = this.wave;
 
     cloudAndWaveEngine(cloudArray, wave);
+    if (!SHOW_CLOUDS_AND_WAVE) {
+      return;
+    }
 
     for (let i = 0; i < NUM_OF_CLOUDS; i++) {
       const cloud = cloudArray[i];
@@ -701,20 +905,26 @@ export class FadeInOut {
 }
 
 /**
- * Make sitting pikachu tiles
+ * Make the menu background tiles: the ANA characters in diagonal stripes.
+ * A tile's character depends on (column - row), so the diagonal scrolling
+ * of the menu wraps around without a visible jump.
  * @param {Object.<string,Texture>} textures
  * @return {Container}
  */
 function makeSittingPikachuTilesContainer(textures) {
   const container = new Container();
-  const texture = textures[TEXTURES.SITTING_PIKACHU];
-  const w = texture.width;
-  const h = texture.height;
+  const tileTextures = CHARACTER_IDS.map(
+    (id) =>
+      textures[TEXTURES.MENU_TILE(id)] || textures[TEXTURES.SITTING_PIKACHU]
+  );
+  const n = tileTextures.length;
+  const w = tileTextures[0].width;
+  const h = tileTextures[0].height;
 
   let tile;
   for (let j = 0; j < Math.floor(304 / h) + 2; j++) {
     for (let i = 0; i < Math.floor(432 / w) + 2; i++) {
-      tile = new Sprite(texture);
+      tile = new Sprite(tileTextures[(((i - j) % n) + n) % n]);
       addChildToParentAndSetLocalPosition(container, tile, w * i, h * j);
     }
   }
@@ -724,81 +934,58 @@ function makeSittingPikachuTilesContainer(textures) {
 
 /**
  * Make background
+ * A single 432x304 background texture is drawn, and the net is put on it.
+ * Until the textures are ready, a plain color background and the original
+ * net pillar are drawn instead.
  * @param {Object.<string,Texture>} textures
  * @return {Container}
  */
 function makeBGContainer(textures) {
   const bgContainer = new Container();
 
-  // sky
-  let tile;
-  let texture = textures[TEXTURES.SKY_BLUE];
-  for (let j = 0; j < 12; j++) {
-    for (let i = 0; i < 432 / 16; i++) {
-      tile = new Sprite(texture);
-      addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 16 * j);
+  // background
+  let bg;
+  if (textures[TEXTURES.BACKGROUND]) {
+    bg = new Sprite(textures[TEXTURES.BACKGROUND]);
+  } else {
+    bg = new Sprite(Texture.WHITE);
+    bg.tint = PLACEHOLDER_BG_COLOR;
+    bg.width = 432;
+    bg.height = 304;
+  }
+  addChildToParentAndSetLocalPosition(bgContainer, bg, 0, 0);
+
+  // net (whiteboard)
+  if (textures[TEXTURES.NET]) {
+    // centered on the net pillar (x = 216); its top is at y = 176
+    const net = new Sprite(textures[TEXTURES.NET]);
+    addChildToParentAndSetLocalPosition(
+      bgContainer,
+      net,
+      216 - net.texture.width / 2,
+      176
+    );
+  } else {
+    let tile = new Sprite(textures[TEXTURES.NET_PILLAR_TOP]);
+    addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 176);
+    for (let j = 0; j < 12; j++) {
+      tile = new Sprite(textures[TEXTURES.NET_PILLAR]);
+      addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 184 + 8 * j);
     }
-  }
-
-  // mountain
-  texture = textures[TEXTURES.MOUNTAIN];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 0, 188);
-
-  // ground_red
-  texture = textures[TEXTURES.GROUND_RED];
-  for (let i = 0; i < 432 / 16; i++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 248);
-  }
-
-  // ground_line
-  texture = textures[TEXTURES.GROUND_LINE];
-  for (let i = 1; i < 432 / 16 - 1; i++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 16 * i, 264);
-  }
-  texture = textures[TEXTURES.GROUND_LINE_LEFT_MOST];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 0, 264);
-  texture = textures[TEXTURES.GROUND_LINE_RIGHT_MOST];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 432 - 16, 264);
-
-  // ground_yellow
-  texture = textures[TEXTURES.GROUND_YELLOW];
-  for (let j = 0; j < 2; j++) {
-    for (let i = 0; i < 432 / 16; i++) {
-      tile = new Sprite(texture);
-      addChildToParentAndSetLocalPosition(
-        bgContainer,
-        tile,
-        16 * i,
-        280 + 16 * j
-      );
-    }
-  }
-
-  // net pillar
-  texture = textures[TEXTURES.NET_PILLAR_TOP];
-  tile = new Sprite(texture);
-  addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 176);
-  texture = textures[TEXTURES.NET_PILLAR];
-  for (let j = 0; j < 12; j++) {
-    tile = new Sprite(texture);
-    addChildToParentAndSetLocalPosition(bgContainer, tile, 213, 184 + 8 * j);
   }
 
   return bgContainer;
 }
 
 /**
- * Make animated sprites for both players
+ * Make the 27-frame texture array of a player character
  * @param {Object.<string,Texture>} textures
- * @return {AnimatedSprite[]} [0] for player 1, [1] for player2
+ * @param {string} characterId
+ * @return {Texture[]}
  */
-function makePlayerAnimatedSprites(textures) {
-  const getPlayerTexture = (i, j) => textures[TEXTURES.PIKACHU(i, j)];
+function makePlayerTextureArray(textures, characterId) {
+  const getPlayerTexture = (i, j) =>
+    textures[TEXTURES.PLAYER(characterId, i, j)];
   const playerTextureArray = [];
   for (let i = 0; i < 7; i++) {
     if (i === 3) {
@@ -812,8 +999,29 @@ function makePlayerAnimatedSprites(textures) {
       }
     }
   }
-  const player1AnimatedSprite = new AnimatedSprite(playerTextureArray, false);
-  const player2AnimatedSprite = new AnimatedSprite(playerTextureArray, false);
+  return playerTextureArray;
+}
+
+/**
+ * Make animated sprites for both players
+ * @param {Object.<string,Texture[]>} playerTextureArrays texture arrays by character ID
+ * @param {string} player1CharacterId
+ * @param {string} player2CharacterId
+ * @return {AnimatedSprite[]} [0] for player 1, [1] for player2
+ */
+function makePlayerAnimatedSprites(
+  playerTextureArrays,
+  player1CharacterId,
+  player2CharacterId
+) {
+  const player1AnimatedSprite = new AnimatedSprite(
+    playerTextureArrays[player1CharacterId],
+    false
+  );
+  const player2AnimatedSprite = new AnimatedSprite(
+    playerTextureArrays[player2CharacterId],
+    false
+  );
 
   player1AnimatedSprite.anchor.x = 0.5;
   player1AnimatedSprite.anchor.y = 0.5;

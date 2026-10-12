@@ -2,7 +2,6 @@ const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const WorkboxPlugin = require('workbox-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -28,7 +27,7 @@ module.exports = {
       patterns: [
         {
           context: 'src/',
-          from: 'resources/assets/**/*.+(json|png|mp3|wav)',
+          from: 'resources/assets/**/*.+(json|png|ico|mp3|wav)',
         },
         { from: 'src/en/manifest.json', to: 'en/manifest.json' },
         { from: 'src/ko/manifest.json', to: 'ko/manifest.json' },
@@ -112,11 +111,6 @@ module.exports = {
         collapseWhitespace: true,
         removeComments: true,
       },
-    }),
-    new WorkboxPlugin.GenerateSW({
-      swDest: 'sw.js',
-      cleanupOutdatedCaches: true,
-      skipWaiting: false,
     }),
   ],
 };

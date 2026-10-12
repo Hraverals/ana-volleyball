@@ -3,7 +3,14 @@
  */
 'use strict';
 import { GROUND_HALF_WIDTH, PikaPhysics } from './physics.js';
-import { MenuView, GameView, FadeInOut, IntroView } from './view.js';
+import {
+  MenuView,
+  CharacterSelectView,
+  GameView,
+  FadeInOut,
+  IntroView,
+} from './view.js';
+import { CHARACTER_IDS, DEFAULT_CHARACTER_IDS } from './assets_path.js';
 import { PikaKeyboard } from './keyboard.js';
 import { PikaAudio } from './audio.js';
 
@@ -25,11 +32,13 @@ export class PikachuVolleyball {
     this.view = {
       intro: new IntroView(resources),
       menu: new MenuView(resources),
+      characterSelect: new CharacterSelectView(resources),
       game: new GameView(resources),
       fadeInOut: new FadeInOut(resources),
     };
     stage.addChild(this.view.intro.container);
     stage.addChild(this.view.menu.container);
+    stage.addChild(this.view.characterSelect.container);
     stage.addChild(this.view.game.container);
     stage.addChild(this.view.fadeInOut.black);
     this.view.intro.visible = false;
@@ -65,6 +74,15 @@ export class PikachuVolleyball {
     /** @type {number} 0: with computer, 1: with friend */
     this.selectedWithWho = 0;
 
+    /** @type {number[]} index into CHARACTER_IDS for player 1 and player 2 */
+    this.selectedCharacters = DEFAULT_CHARACTER_IDS.map((id) =>
+      CHARACTER_IDS.indexOf(id)
+    );
+    /** @type {boolean[]} whether player 1 / player 2 confirmed the character */
+    this.characterConfirmed = [false, false];
+    /** @type {number[]} xDirection of each keyboard on the previous frame */
+    this.previousXDirections = [0, 0];
+
     /** @type {number[]} [0] for player 1 score, [1] for player 2 score */
     this.scores = [0, 0];
     /** @type {number} winning score: if either one of the players reaches this score, game ends */
@@ -83,6 +101,7 @@ export class PikachuVolleyball {
     this.frameTotal = {
       intro: 165,
       afterMenuSelection: 15,
+      afterCharacterSelect: 30,
       beforeStartOfNewGame: 15,
       startOfNewGame: 71,
       afterEndOfRound: 5,
@@ -241,17 +260,102 @@ export class PikachuVolleyball {
       this.audio.sounds.pikachu.play();
       this.frameCounter = 0;
       this.noInputFrameCounter = 0;
-      this.state = this.afterMenuSelection;
+      this.view.menu.visible = false;
+      this.state = this.characterSelect;
       return;
     }
 
     if (this.noInputFrameCounter >= this.noInputFrameTotal.menu) {
       this.physics.player1.isComputer = true;
       this.physics.player2.isComputer = true;
+      // nobody is playing: skip character select and pick at random
+      this.selectedCharacters = [
+        randomCharacterIndex(),
+        randomCharacterIndex(),
+      ];
+      this.applySelectedCharacters();
       this.frameCounter = 0;
       this.noInputFrameCounter = 0;
       this.state = this.afterMenuSelection;
     }
+  }
+
+  /**
+   * Character select: each human player picks a character with the left and
+   * right keys and confirms with the power hit key. A computer player gets
+   * a random character.
+   * @type {GameState}
+   */
+  characterSelect() {
+    const players = [this.physics.player1, this.physics.player2];
+    const view = this.view.characterSelect;
+    if (this.frameCounter === 0) {
+      for (let i = 0; i < 2; i++) {
+        if (players[i].isComputer) {
+          this.selectedCharacters[i] = randomCharacterIndex();
+          this.characterConfirmed[i] = true;
+        } else {
+          this.characterConfirmed[i] = false;
+        }
+        this.previousXDirections[i] = this.keyboardArray[i].xDirection;
+      }
+      view.visible = true;
+    }
+
+    for (let i = 0; i < 2; i++) {
+      const keyboard = this.keyboardArray[i];
+      const xDirection = keyboard.xDirection;
+      const justPressed =
+        xDirection !== 0 && xDirection !== this.previousXDirections[i];
+      this.previousXDirections[i] = xDirection;
+      if (players[i].isComputer || this.characterConfirmed[i]) {
+        continue;
+      }
+      if (justPressed) {
+        const n = CHARACTER_IDS.length;
+        this.selectedCharacters[i] =
+          (this.selectedCharacters[i] + xDirection + n) % n;
+        this.audio.sounds.pi.play();
+      } else if (keyboard.powerHit === 1) {
+        this.characterConfirmed[i] = true;
+        this.audio.sounds.pika.play(i === 0 ? -1 : 1);
+      }
+    }
+
+    view.setSelection(
+      this.selectedCharacters,
+      this.characterConfirmed,
+      // with the computer, show the computer's pick only after the human's
+      players.map(
+        (player, i) =>
+          !player.isComputer ||
+          this.characterConfirmed[1 - i] ||
+          players[1 - i].isComputer
+      )
+    );
+    view.drawCharacters(this.frameCounter);
+    this.frameCounter++;
+
+    if (this.characterConfirmed[0] && this.characterConfirmed[1]) {
+      this.noInputFrameCounter++;
+      // let the win animation of the picks play for a moment
+      if (this.noInputFrameCounter >= this.frameTotal.afterCharacterSelect) {
+        this.applySelectedCharacters();
+        this.frameCounter = 0;
+        this.noInputFrameCounter = 0;
+        this.state = this.afterMenuSelection;
+      }
+    }
+  }
+
+  /**
+   * Give the selected characters to the players in the game view
+   */
+  applySelectedCharacters() {
+    this.view.game.setPlayerCharacters(
+      CHARACTER_IDS[this.selectedCharacters[0]],
+      CHARACTER_IDS[this.selectedCharacters[1]]
+    );
   }
 
   /**
@@ -276,6 +380,7 @@ export class PikachuVolleyball {
     if (this.frameCounter >= this.frameTotal.beforeStartOfNewGame) {
       this.frameCounter = 0;
       this.view.menu.visible = false;
+      this.view.characterSelect.visible = false;
       this.state = this.startOfNewGame;
     }
   }
@@ -507,6 +612,7 @@ export class PikachuVolleyball {
     this.slowMotionFramesLeft = 0;
     this.slowMotionNumOfSkippedFrames = 0;
     this.view.menu.visible = false;
+    this.view.characterSelect.visible = false;
     this.view.game.visible = false;
     this.state = this.intro;
   }
@@ -524,4 +630,13 @@ export class PikachuVolleyball {
     this.view.game.scoreBoards[0].visible = !bool;
     this.view.game.scoreBoards[1].visible = !bool;
   }
+}
+
+/**
+ * Pick a character at random. Math.random is used instead of rand() so the
+ * random sequence the game itself uses is not affected.
+ * @return {number} index into CHARACTER_IDS
+ */
+function randomCharacterIndex() {
+  return Math.floor(Math.random() * CHARACTER_IDS.length);
 }

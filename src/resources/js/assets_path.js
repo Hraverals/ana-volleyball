@@ -9,8 +9,21 @@ export const ASSETS_PATH = {
   SOUNDS: {},
 };
 
+/** IDs of selectable player characters */
+export const CHARACTER_IDS = ['a_teal', 'n_blue', 'a_red'];
+/** characters used until the players choose (player 1, player 2) */
+export const DEFAULT_CHARACTER_IDS = ['a_teal', 'n_blue'];
+
 const TEXTURES = ASSETS_PATH.TEXTURES;
 TEXTURES.PIKACHU = (i, j) => `pikachu/pikachu_${i}_${j}.png`;
+/**
+ * Texture name of a player character frame
+ * @param {string} characterId one of CHARACTER_IDS
+ * @param {number} i state
+ * @param {number} j frame number
+ */
+TEXTURES.PLAYER = (characterId, i, j) =>
+  `players/${characterId}/${characterId}_${i}_${j}.png`;
 TEXTURES.BALL = (s) => `ball/ball_${s}.png`;
 TEXTURES.NUMBER = (n) => `number/number_${n}.png`;
 
@@ -23,6 +36,8 @@ TEXTURES.GROUND_LINE_RIGHT_MOST = 'objects/ground_line_rightmost.png';
 TEXTURES.GROUND_YELLOW = 'objects/ground_yellow.png';
 TEXTURES.NET_PILLAR_TOP = 'objects/net_pillar_top.png';
 TEXTURES.NET_PILLAR = 'objects/net_pillar.png';
+TEXTURES.BACKGROUND = 'objects/background.png';
+TEXTURES.NET = 'objects/net.png';
 TEXTURES.SHADOW = 'objects/shadow.png';
 TEXTURES.BALL_HYPER = 'ball/ball_hyper.png';
 TEXTURES.BALL_TRAIL = 'ball/ball_trail.png';
@@ -44,6 +59,8 @@ TEXTURES.WITH_FRIEND = 'messages/ja/with_friend.png';
 TEXTURES.GAME_START = 'messages/ja/game_start.png';
 
 TEXTURES.SITTING_PIKACHU = 'sitting_pikachu.png';
+/** menu background tile of a character */
+TEXTURES.MENU_TILE = (characterId) => `menu/tile_${characterId}.png`;
 
 const SOUNDS = ASSETS_PATH.SOUNDS;
 SOUNDS.BGM = '../resources/assets/sounds/bgm.mp3';
