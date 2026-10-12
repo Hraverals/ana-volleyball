@@ -25,4 +25,4 @@ Clouds and wave are hidden in the room background (their model still runs so the
 
 ## Dev tooling
 
-- The service worker caches the dev server's assets too, so `npm run start` can show an old build after changes. Consider skipping service worker registration in development builds.
+- Starting the dev server runs `CleanWebpackPlugin`, which empties the real `dist/` folder (the dev build itself lives in memory). Run `npm run build` again after `npm run start` if you need `dist/`.
