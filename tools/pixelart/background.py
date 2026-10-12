@@ -127,7 +127,7 @@ def _floor(p):
 def _left_half(p, rnd):
     _posters(p, rnd, 12, 38)
     _photo_board(p, rnd, 100, 40)
-    _wall_whiteboard(p, rnd, 140, 54)
+    _wall_whiteboard(p, rnd, 140, 110)  # low enough for short legs
     _desk(p, 2, 132, 212)
     _laptop(p, 30, 212)
     _book_stack(p, 92, 212, rnd)
