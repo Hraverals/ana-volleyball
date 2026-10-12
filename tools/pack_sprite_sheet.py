@@ -10,6 +10,7 @@ added or replaced by name:
 - objects/background.png (432x304) and objects/net.png
 - title, logo and menu textures from tools/pixelart/titles.py (replacing the
   Pokémon / Pikachu ones under the same names)
+- the ball, its effects and the score digits from tools/pixelart/ball.py
 
 The whole sheet is then repacked with a simple shelf packer and written in
 the same TexturePacker "JSON Hash" format, so running this again gives the
@@ -28,6 +29,7 @@ sys.path.insert(0, os.path.join(HERE, 'pixelart'))
 from background import build_background, build_net  # noqa: E402
 from characters import PALETTES, build_frame  # noqa: E402
 from poses import POSES  # noqa: E402
+from ball import textures as ball_textures  # noqa: E402
 from titles import textures as title_textures  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
@@ -63,6 +65,7 @@ def ana_textures():
     out['objects/background.png'] = build_background()
     out['objects/net.png'] = build_net()
     out.update(title_textures())
+    out.update(ball_textures())
     return out
 
 
