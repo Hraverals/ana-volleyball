@@ -2,7 +2,7 @@
 
 Out of scope for the current ANA remake work. Recorded here instead of being done now.
 
-## Assets still showing Pokémon / Pikachu
+## Remaining Pikachu parts and asset follow-ups
 
 - The original `pikachu/pikachu_*.png` player frames are no longer drawn but still sit in the sprite sheet. Overwrite or drop them (the packer keeps every existing name today).
 - The Korean `game_start.png` and the common `ready.png` / `game_end.png` messages still use the original lettering (no Japanese left); restyle them to match the new jelly logo if wanted.
@@ -12,7 +12,7 @@ Out of scope for the current ANA remake work. Recorded here instead of being don
 
 ## Character select
 
-- The player markers reuse the red score digits "1" and "2". Dedicated "1P" / "2P" label textures (and a "select your character" title) would read better.
+- The player markers reuse the score digits "1" and "2". Dedicated "1P" / "2P" label textures (and a "select your character" title) would read better.
 - The dimmed room behind the select screen could get a slow idle animation or a spotlight on the slot under each cursor.
 - Remember the last picks between games instead of resetting to a_teal / n_blue.
 
