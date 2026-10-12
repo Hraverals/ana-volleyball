@@ -5,7 +5,7 @@ Out of scope for the current ANA remake work. Recorded here instead of being don
 ## Assets still showing Pokémon / Pikachu
 
 - The original `pikachu/pikachu_*.png` player frames are no longer drawn but still sit in the sprite sheet. Overwrite or drop them (the packer keeps every existing name today).
-- The `game_start.png`, `ready.png` and `game_end.png` messages still use the original lettering; restyle them to match the new jelly logo if wanted.
+- The Korean `game_start.png` and the common `ready.png` / `game_end.png` messages still use the original lettering (no Japanese left); restyle them to match the new jelly logo if wanted.
 - Title and menu textures are rasterized from Windows fonts (Arial Black, Malgun Gothic). Bundle an open pixel font so `tools/pixelart/titles.py` gives the same output on any OS.
 - Reskin the ball and the score numbers. The current ball's gray lower half sits close to the room wall's tone; a new ball should keep a dark outline and a bright, saturated face.
 - Replace sound effects (`WAVE140`–`WAVE144`, Pikachu voices)

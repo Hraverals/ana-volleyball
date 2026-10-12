@@ -9,6 +9,8 @@ layout code does not change:
 - messages/{ja,ko}/fight.png             160x160 burst on the menu
 - messages/{ja,ko}/with_computer.png, with_friend.png 120x20 menu options
   (the Korean ones keep their words, redrawn to read on the menu tiles)
+- messages/ja/game_start.png             96x24   "GAME START!" (the original
+  is Japanese; the Korean one stays)
 - messages/common/sachisoft.png          360x20  credit line; the original
   credit stays and "ANA REMAKE" is added
 - sitting_pikachu.png and menu/tile_{id}.png 104x104 menu background tiles
@@ -238,6 +240,18 @@ def with_who(text, size, font=FONT_LATIN):
     return b.image()
 
 
+def game_start():
+    """Round start message in the original style: red letters with a dark
+    rim and a drop shadow, 96x24."""
+    b = Board(96, 24)
+    m = _fit_font('GAME START!', FONT_LATIN, 90, 16)
+    full = b.place(m, (96 - m.shape[1]) // 2 - 1, (24 - m.shape[0]) // 2 - 1)
+    b.px[np.roll(np.roll(_dilate(full), 2, 0), 2, 1)] = SHADOW
+    b.px[_dilate(full)] = (40, 0, 0, 255)
+    b.px[full] = (255, 32, 32, 255)
+    return b.image()
+
+
 def credit():
     """The original credit line plus the remake, 360x20."""
     b = Board(360, 20)
@@ -289,6 +303,7 @@ def textures():
                                                     FONT_KOREAN)
     out['messages/ko/with_friend.png'] = with_who('둘이서 같이~', size,
                                                   FONT_KOREAN)
+    out['messages/ja/game_start.png'] = game_start()
     out['messages/common/sachisoft.png'] = credit()
     for character_id in PALETTES:
         out[f'menu/tile_{character_id}.png'] = menu_tile(character_id)
