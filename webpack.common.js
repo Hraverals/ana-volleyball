@@ -28,7 +28,7 @@ module.exports = {
       patterns: [
         {
           context: 'src/',
-          from: 'resources/assets/**/*.+(json|png|mp3|wav)',
+          from: 'resources/assets/**/*.+(json|png|ico|mp3|wav)',
         },
         { from: 'src/en/manifest.json', to: 'en/manifest.json' },
         { from: 'src/ko/manifest.json', to: 'ko/manifest.json' },

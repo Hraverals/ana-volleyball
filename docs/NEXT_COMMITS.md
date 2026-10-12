@@ -7,8 +7,8 @@ Out of scope for the current ANA remake work. Recorded here instead of being don
 - The original `pikachu/pikachu_*.png` player frames are no longer drawn but still sit in the sprite sheet. Overwrite or drop them (the packer keeps every existing name today).
 - The Korean `game_start.png` and the common `ready.png` / `game_end.png` messages still use the original lettering (no Japanese left); restyle them to match the new jelly logo if wanted.
 - Title and menu textures are rasterized from Windows fonts (Arial Black, Malgun Gothic). Bundle an open pixel font so `tools/pixelart/titles.py` gives the same output on any OS.
-- Replace sound effects (`WAVE140`–`WAVE144`, Pikachu voices)
-- Update the icons (`IDI_PIKAICON-*`), HTML titles and the web manifest
+- Sound effects (`WAVE140`–`WAVE144`, Pikachu voices) stay as they are until new sounds are prepared separately; swap the files behind `SOUNDS.*` in `assets_path.js` when they are ready.
+- Rename the pages and the app: HTML `<title>`, `apple-mobile-web-app-title` and the manifest `name` / `short_name` still say Pikachu Volleyball (the icons are already the ANA logo).
 
 ## Character select
 
