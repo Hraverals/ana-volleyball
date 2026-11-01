@@ -12,9 +12,9 @@ services:
     restart: unless-stopped
     expose:
       - '80'
-    # 서버 배포 전까지 로컬 확인용. 서버에 올릴 때는 이 블록을 지운다.
+    # Kite 플랫폼 프록시 -> 도메인 요청을 80번 포트로 전달함
     ports:
-      - '8081:80'
+      - '80:80'
     healthcheck:
       # alpine에서 localhost는 IPv6(::1)로 풀릴 수 있는데 nginx는 IPv4로만 listen하므로 127.0.0.1을 쓴다.
       test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1/healthz']
