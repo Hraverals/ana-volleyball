@@ -1,18 +1,12 @@
 name: ana-volleyball
 
 services:
-  # 서비스 이름은 같은 네트워크 안에서 DNS 이름이 된다.
-  # 공유 프록시 네트워크에 붙을 예정이므로 "web" 같은 흔한 이름 대신 고유한 이름을 쓴다.
   ana-volleyball:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-      target: prod
-    image: ana-volleyball:prod
+    # prod는 CI가 GHCR에 발행한 이미지만 실행한다. 서버에서 직접 빌드하지 않는다.
+    # IMAGE_TAG를 지정하지 않으면 latest(main 최신)를 쓴다.
+    image: ghcr.io/hraverals/ana-volleyball:${IMAGE_TAG:-latest}
     restart: unless-stopped
-    expose:
-      - '80'
-    # Kite 플랫폼 프록시 -> 도메인 요청을 80번 포트로 전달함
+    # Kite 트래픽 경로: Traefik Ingress(HTTPS 종료) → Service vps-web-<vm> :80 → VM :80
     ports:
       - '80:80'
     healthcheck:
@@ -22,11 +16,3 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
-    # 배포 단계에서 주석 해제
-    # networks:
-    #   - proxy
-# 배포 단계에서 주석 해제 (name은 배포환경 실제 네트워크 이름)
-# networks:
-#   proxy:
-#     external: true
-#     name: <네트워크_이름>

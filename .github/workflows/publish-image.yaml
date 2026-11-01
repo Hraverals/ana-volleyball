@@ -1,0 +1,69 @@
+name: Publish image
+
+on:
+  push:
+    # main은 latest로, feature/deploy는 브랜치 태그로만 발행된다(아래 tags 참고).
+    branches: [main, feature/deploy]
+    # 문서만 바뀐 커밋은 이미지를 다시 만들 필요가 없다.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+# GITHUB_TOKEN 권한을 이 작업에 필요한 만큼만 연다(최소 권한).
+permissions:
+  contents: read
+  packages: write
+
+# 같은 브랜치에 연달아 push하면 이전 빌드는 취소하고 마지막 것만 발행한다.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # GHCR 이미지 이름은 소문자여야 한다(계정명 Hraverals → hraverals).
+  IMAGE: ghcr.io/hraverals/ana-volleyball
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images:
+            ${{ env.IMAGE }}
+            # tags 한 줄씩 설명하기
+            # main(기본 브랜치)일 때만 latest를 붙인다 → 서버가 기본으로 받는 태그
+            # 브랜치 이름 태그 (feature/deploy → feature-deploy)
+            # 커밋 SHA 태그 (sha-1a2b3c4) → 롤백할 때 특정 버전을 지목하는 용도
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions 캐시에 레이어를 저장해서 다음 빌드의 npm ci를 건너뛴다.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
