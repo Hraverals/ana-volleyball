@@ -1,0 +1,22 @@
+# VCS / 에디터
+.git
+.github
+.vscode
+
+# 컨테이너 안에서 새로 만드는 것들
+node_modules
+dist
+
+# 빌드에 필요 없는 것들
+docs
+tools
+reference
+*.md
+.firebase
+.firebaserc
+firebase.json
+
+# Docker 관련 파일 (compose 파일이 바뀌어도 빌드 캐시가 깨지지 않게)
+Dockerfile
+.dockerignore
+deploy/docker-compose*.yaml
