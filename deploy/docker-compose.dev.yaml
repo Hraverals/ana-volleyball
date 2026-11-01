@@ -1,0 +1,22 @@
+name: ana-volleyball-dev
+
+services:
+  ana-volleyball:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: dev
+    image: ana-volleyball:dev
+    ports:
+      - '8080:8080'
+    volumes:
+      # 소스를 바인드 마운트하자. 저장하면 바로 반영되게 한다.
+      - ..:/app
+      # 위 마운트가 컨테이너의 node_modules까지 호스트 폴더로 덮어쓰지 않도록
+      # 익명 볼륨으로 따로 뺀다.
+      - /app/node_modules
+    environment:
+      # 저장해도 반영이 안 되면 폴링 방식으로 감시한다.
+      # (Windows 파일시스템을 마운트할 때 주로 필요)
+      WATCHPACK_POLLING: 'true'
+      NODE_ENV: development
